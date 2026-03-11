@@ -5,6 +5,48 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Sakarya Gas Field — QC Dashboard</title>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3M8L7K0J1R"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3M8L7K0J1R', {
+    page_title: 'Sakarya Gas Field Dashboard',
+    page_location: window.location.href,
+    send_page_view: true,
+    // Enhanced measurement
+    cookie_flags: 'SameSite=None;Secure',
+  });
+
+  // Track tab clicks
+  function trackTab(tabName) {
+    gtag('event', 'tab_view', {
+      event_category: 'Navigation',
+      event_label: tabName,
+      value: 1
+    });
+  }
+
+  // Track time on page (engagement)
+  let _startTime = Date.now();
+  window.addEventListener('beforeunload', () => {
+    const seconds = Math.round((Date.now() - _startTime) / 1000);
+    gtag('event', 'time_on_page', {
+      event_category: 'Engagement',
+      event_label: 'seconds',
+      value: seconds,
+      non_interaction: true
+    });
+  });
+
+  // Track Google Sheets sync
+  function trackSync(success) {
+    gtag('event', success ? 'data_sync_success' : 'data_sync_failed', {
+      event_category: 'Data',
+      event_label: 'Google Sheets',
+    });
+  }
+</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
 :root {
@@ -786,10 +828,12 @@ async function fetchSheetData() {
     const rows = await fetchCSV(URLS.summary);
     applyAllData(rows);
     showLiveIndicator(true);
+    if (typeof trackSync === "function") trackSync(true);
     document.querySelector(".last-update") && (document.querySelector(".last-update").textContent = "Last sync: " + new Date().toLocaleTimeString());
   } catch(e) {
     console.warn("Sheet fetch failed:", e);
     showLiveIndicator(false);
+    if (typeof trackSync === "function") trackSync(false);
   }
 }
 
@@ -1229,12 +1273,13 @@ function sortT(id,col){
   rows.forEach(r=>t.tBodies[0].appendChild(r));
 }
 
-document.querySelectorAll(".tab").forEach(t=>{
-  t.addEventListener("click",()=>{
-    document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
-    document.querySelectorAll(".tab-content").forEach(x=>x.classList.remove("active"));
+document.querySelectorAll(".tab").forEach(t => {
+  t.addEventListener("click", () => {
+    document.querySelectorAll(".tab").forEach(x => x.classList.remove("active"));
+    document.querySelectorAll(".tab-content").forEach(x => x.classList.remove("active"));
     t.classList.add("active");
     document.getElementById(t.dataset.tab).classList.add("active");
+    if (typeof trackTab === "function") trackTab(t.textContent.trim());
   });
 });
 </script>
