@@ -495,10 +495,10 @@ footer{
       </div>
     </div>
     <div style="display:flex;gap:32px;margin-top:14px;">
-      <div><div style="font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:4px;">PO Quantity</div><div style="font-size:22px;font-weight:800;color:var(--text);">15,462</div></div>
-      <div><div style="font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:4px;">Inspected</div><div style="font-size:22px;font-weight:800;color:var(--blue);">170</div></div>
-      <div><div style="font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:4px;">Remaining</div><div style="font-size:22px;font-weight:800;color:var(--amber);" class="po-val">15,292</div></div>
-      <div><div style="font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:4px;">Completion</div><div style="font-size:22px;font-weight:800;color:var(--muted);">1.10%</div></div>
+      <div><div style="font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:4px;">PO Quantity</div><div id="po-qty" style="font-size:22px;font-weight:800;color:var(--text);">15,462</div></div>
+      <div><div style="font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:4px;">Inspected</div><div id="po-inspected" style="font-size:22px;font-weight:800;color:var(--blue);">170</div></div>
+      <div><div style="font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:4px;">Remaining</div><div id="po-remaining" style="font-size:22px;font-weight:800;color:var(--amber);">15,292</div></div>
+      <div><div style="font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:4px;">Completion</div><div id="po-completion" style="font-size:22px;font-weight:800;color:var(--muted);">1.10%</div></div>
     </div>
   </div>
 
@@ -874,10 +874,14 @@ function applyAllData(rows) {
   if (pct) pct.textContent = completion + "%";
 
   // PO progress values
-  document.querySelectorAll(".po-val").forEach((el, i) => {
-    const vals = [poQty.toLocaleString(), incoming.toLocaleString(), (poQty - incoming).toLocaleString(), completion + "%"];
-    if (vals[i] !== undefined) el.textContent = vals[i];
-  });
+  const elQty  = document.getElementById("po-qty");
+  const elInsp = document.getElementById("po-inspected");
+  const elRem  = document.getElementById("po-remaining");
+  const elComp = document.getElementById("po-completion");
+  if (elQty)  elQty.textContent  = poQty.toLocaleString();
+  if (elInsp) elInsp.textContent = incoming.toLocaleString();
+  if (elRem)  elRem.textContent  = (poQty - incoming).toLocaleString();
+  if (elComp) elComp.textContent = completion + "%";
 
   // Summary strip
   const ss = document.querySelectorAll(".ss-val");
