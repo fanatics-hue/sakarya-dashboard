@@ -775,13 +775,16 @@ footer{
 /* ════════════════ GOOGLE SHEETS LIVE DATA ════════════════ */
 const SHEET_BASE = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRHGJFA9urQtgVExvYpkr8p7ck-oP4xMM-3x_WyZXi-LRw5RVBn_iyj3-UvFPsjIV6wW9ebMt-qpXSg/pub";
 const URLS = {
-  summary:      SHEET_BASE + "?gid=1352833736&single=true&output=csv",
-  itp:          SHEET_BASE + "?gid=1352833736&single=true&output=csv", // same sheet, parsed by header
-  weldDefects:  SHEET_BASE + "?gid=1352833736&single=true&output=csv",
-  finalDefects: SHEET_BASE + "?gid=1352833736&single=true&output=csv",
+  summary: SHEET_BASE + "?gid=1352833736&single=true&output=csv",
 };
-const PROXY = "https://api.allorigins.win/get?url=";
 const REFRESH_MS = 5 * 60 * 1000;
+
+// Multiple CORS proxies — tried in order until one works
+const PROXIES = [
+  url => `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`,
+  url => `https://corsproxy.io/?${encodeURIComponent(url)}`,
+  url => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`,
+];
 
 // ── CSV parser (handles quoted fields) ─────────────────────────────────────
 function parseCSV(text) {
@@ -802,11 +805,22 @@ function parseCSV(text) {
   return rows;
 }
 
-// ── Fetch one sheet CSV via proxy ──────────────────────────────────────────
+// ── Fetch with proxy fallback ──────────────────────────────────────────────
 async function fetchCSV(url) {
-  const res = await fetch(PROXY + encodeURIComponent(url));
-  const json = await res.json();
-  return parseCSV(json.contents);
+  for (const proxyFn of PROXIES) {
+    try {
+      const res = await fetch(proxyFn(url), { signal: AbortSignal.timeout(8000) });
+      if (!res.ok) continue;
+      const json = await res.json();
+      // allorigins returns {contents:...}, codetabs/corsproxy return raw text
+      const text = json.contents !== undefined ? json.contents : JSON.stringify(json);
+      if (text && text.length > 10) return parseCSV(text);
+    } catch(e) { continue; }
+  }
+  // Last resort: direct fetch (works if no CORS issue)
+  const res = await fetch(url);
+  const text = await res.text();
+  return parseCSV(text);
 }
 
 // ── Main fetch & render ────────────────────────────────────────────────────
@@ -816,11 +830,14 @@ async function fetchSheetData() {
     applyAllData(rows);
     showLiveIndicator(true);
     if (typeof trackSync === "function") trackSync(true);
-    document.querySelector(".last-update") && (document.querySelector(".last-update").textContent = "Last sync: " + new Date().toLocaleTimeString());
+    const el = document.querySelector(".last-update");
+    if (el) el.textContent = "Last sync: " + new Date().toLocaleTimeString();
   } catch(e) {
-    console.warn("Sheet fetch failed:", e);
+    console.warn("Sheet fetch failed — all proxies exhausted:", e.message);
     showLiveIndicator(false);
     if (typeof trackSync === "function") trackSync(false);
+    const el = document.querySelector(".last-update");
+    if (el) el.textContent = "Sync failed " + new Date().toLocaleTimeString();
   }
 }
 
