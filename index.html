@@ -827,13 +827,13 @@ document.addEventListener("DOMContentLoaded", () => {
   <div class="sl">Final Inspection Results</div>
   <div class="g2">
     <div class="card">
-      <div class="card-ey">Final Stage Pass Rate</div>
+      <div class="card-ey">Final Stage — Acceptance Status</div>
       <div class="card-title">Dimensional & Final Checks</div>
       <div class="cw" style="height:260px"><canvas id="finalChart"></canvas></div>
     </div>
     <div class="card">
       <div class="card-ey">Final Defects Log</div>
-      <div class="card-title">Recorded Final Defects</div>
+      <div class="card-title">Recorded Final Defects — Not Yet Accepted</div>
       <div style="margin-top:8px">
         <div class="pr"><span class="pr-lbl">Burn Through</span><div class="pr-track"><div class="pr-fill" style="width:33%;background:var(--red)"></div></div><span class="pr-val">1</span></div>
         <div class="pr"><span class="pr-lbl">Pore</span><div class="pr-track"><div class="pr-fill" style="width:33%;background:var(--amber)"></div></div><span class="pr-val">1</span></div>
@@ -1356,7 +1356,7 @@ new Chart(document.getElementById("finalChart"),{
     labels:fin.map(s=>s.name),
     datasets:[
       {label:"Accepted",data:fin.map(s=>s.n),backgroundColor:"rgba(0,230,118,.6)",borderColor:GR,borderWidth:1,borderRadius:3},
-      {label:"Rejected",data:fin.map(s=>170-s.n),backgroundColor:"rgba(255,71,87,.6)",borderColor:RD,borderWidth:1,borderRadius:3}
+      {label:"Not Yet Accepted",data:fin.map(s=>170-s.n),backgroundColor:"rgba(255,202,40,.6)",borderColor:AM,borderWidth:1,borderRadius:3}
     ]
   },
   options:{
