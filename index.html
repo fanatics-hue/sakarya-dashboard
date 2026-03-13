@@ -1235,20 +1235,20 @@ window._donutChart = new Chart(document.getElementById("donutChart"),{
 new Chart(document.getElementById("prodChart"),{
   type:"bar",
   data:{
-    labels:["Phase 1\n(2023)","Phase 2A\n(2026)","Phase 2\n(2027-28)","Phase 3\n(2027-28)"],
+    labels:["Phase 1\n(2023)","Phase 2\n(2027)","Phase 3\n(2028+)"],
     datasets:[{
-      label:"Production (relative)",
-      data:[10,20,35,60],
-      backgroundColor:["rgba(0,168,255,.6)","rgba(255,202,40,.6)","rgba(0,230,118,.6)","rgba(0,229,200,.6)"],
-      borderColor:[BL,AM,GR,TE],
+      label:"Production Capacity",
+      data:[10,14,22],
+      backgroundColor:["rgba(0,168,255,.6)","rgba(0,229,200,.6)","rgba(0,230,118,.6)"],
+      borderColor:[BL,TE,GR],
       borderWidth:1,borderRadius:5,
     }]
   },
   options:{
     responsive:true,maintainAspectRatio:false,
-    plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>{const lb=["~10M m³/day","~20M m³/day","~35M m³/day","25M SCMD (FPU)"];return lb[c.dataIndex]||c.raw+'M est.';}}}},
+    plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>{const lb=["~10M m³/day (Phase 1)","~14 bcm/year (Phase 2)","~22 bcm/year (Phase 3 est.)"];return lb[c.dataIndex]||c.raw+' est.';}}}},
     scales:{
-      y:{beginAtZero:true,ticks:{font:{size:9}},grid:{color:"rgba(0,168,255,0.06)"}},
+      y:{beginAtZero:true,ticks:{font:{size:9},callback:v=>v+'M'},grid:{color:"rgba(0,168,255,0.06)"},title:{display:true,text:"bcm / year (est.)",font:{size:8},color:"#4a7090"}},
       x:{grid:{display:false},ticks:{font:{size:9}}}
     }
   }
