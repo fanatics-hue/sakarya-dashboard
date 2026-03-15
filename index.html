@@ -146,7 +146,35 @@ footer{border-top:1px solid var(--border);background:rgba(6,13,26,.95);padding:2
 ::-webkit-scrollbar-track{background:var(--bg);}
 ::-webkit-scrollbar-thumb{background:var(--s3);border-radius:3px;}
 ::-webkit-scrollbar-thumb:hover{background:var(--blue);}
-@media(max-width:960px){header,nav,main,footer{padding-left:20px;padding-right:20px;}.kpi-grid,.g2,.info-grid{grid-template-columns:1fr 1fr;}.g3{grid-template-columns:1fr;}.sstrip{flex-direction:column;}}
+.tab-status-dot{display:inline-block;width:5px;height:5px;border-radius:50%;background:var(--muted);margin-left:7px;vertical-align:middle;transition:background .3s;}
+.sync-error-banner{display:none;align-items:center;background:rgba(255,71,87,0.08);border:1px solid rgba(255,71,87,0.25);border-radius:var(--r);padding:12px 18px;margin-bottom:18px;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:1px;color:var(--red);}
+/* ── RESPONSIVE MOBILE ── */
+@media(max-width:960px){
+  header,nav,main,footer{padding-left:20px;padding-right:20px;}
+  .kpi-grid,.g2,.info-grid{grid-template-columns:1fr 1fr;}
+  .g3{grid-template-columns:1fr;}
+  .sstrip{flex-direction:column;}
+}
+@media(max-width:640px){
+  header{flex-direction:column;align-items:flex-start;padding:12px 16px;height:auto;gap:8px;}
+  .hdr-right{gap:12px;flex-wrap:wrap;}
+  nav{padding:0 10px;}
+  .tab{padding:10px 12px;font-size:9px;letter-spacing:1px;}
+  main{padding:20px 16px;}
+  .kpi-grid{grid-template-columns:1fr 1fr;}
+  .kpi-val{font-size:36px;}
+  .g2,.g3,.info-grid{grid-template-columns:1fr;}
+  .dyn-grid{grid-template-columns:1fr;}
+  .sstrip{flex-direction:column;}
+  .tbar{flex-direction:column;align-items:flex-start;gap:10px;}
+  .tbar-right{width:100%;flex-wrap:wrap;}
+  .search{width:100%;}
+  .btn-export{flex:1;justify-content:center;}
+  footer{flex-direction:column;gap:16px;padding:20px 16px;}
+  .ft-contacts{gap:20px;}
+  .card{padding:18px 14px;}
+  .login-box{width:90%;padding:32px 24px 28px;}
+}
 /* LOGIN */
 #login-screen{position:fixed;inset:0;z-index:9999;background:#060d1a;display:flex;align-items:center;justify-content:center;}
 .login-box{background:var(--s1);border:1px solid var(--border);border-radius:16px;padding:48px 52px 40px;width:380px;box-shadow:0 0 60px rgba(0,168,255,0.08);position:relative;overflow:hidden;}
@@ -454,25 +482,56 @@ async function fetchCSV(url) {
 
 /* ── Main fetch — all 3 sheets in parallel ────────────────────────── */
 async function fetchAllData() {
-  try {
-    const [summaryRows, weldRows, finalRows] = await Promise.all([
-      fetchCSV(URLS.summary),
-      fetchCSV(URLS.defectsWeld),
-      fetchCSV(URLS.defectsFinal),
-    ]);
-    applySummary(summaryRows);
-    applyDefectsWeld(weldRows);
-    applyDefectsFinal(finalRows);
-    showLiveIndicator(true);
-    if (typeof trackSync==="function") trackSync(true);
-    const el = document.querySelector(".last-update");
-    if (el) el.textContent = "Last sync: " + new Date().toLocaleTimeString();
-  } catch(e) {
-    console.warn("Fetch failed:", e.message);
-    showLiveIndicator(false);
-    if (typeof trackSync==="function") trackSync(false);
-    const el = document.querySelector(".last-update");
-    if (el) el.textContent = "Sync failed " + new Date().toLocaleTimeString();
+  const results = await Promise.allSettled([
+    fetchCSV(URLS.summary),
+    fetchCSV(URLS.defectsWeld),
+    fetchCSV(URLS.defectsFinal),
+  ]);
+
+  const [sumRes, weldRes, finalRes] = results;
+  let anyOk = false;
+
+  if (sumRes.status === "fulfilled") {
+    applySummary(sumRes.value);
+    setTabStatus("overview", true);
+    setTabStatus("ndt", true);
+    anyOk = true;
+  } else {
+    console.warn("SUMMARY fetch failed:", sumRes.reason?.message);
+    setTabStatus("overview", false);
+    setTabStatus("ndt", false);
+    showTabError("overview", "Dati non disponibili — sync fallita");
+    showTabError("ndt", "Dati non disponibili — sync fallita");
+  }
+
+  if (weldRes.status === "fulfilled") {
+    applyDefectsWeld(weldRes.value);
+    setTabStatus("defects", true);
+    anyOk = true;
+  } else {
+    console.warn("DEFECTS_WELD fetch failed:", weldRes.reason?.message);
+    setTabStatus("defects", false);
+    showTabError("defects", "DEFECTS_WELD — sync fallita. Verificare Apps Script.");
+  }
+
+  if (finalRes.status === "fulfilled") {
+    applyDefectsFinal(finalRes.value);
+    setTabStatus("final", true);
+    anyOk = true;
+  } else {
+    console.warn("DEFECTS_FINAL fetch failed:", finalRes.reason?.message);
+    setTabStatus("final", false);
+    showTabError("final", "DEFECTS_FINAL — sync fallita. Verificare Apps Script.");
+  }
+
+  showLiveIndicator(anyOk, results.filter(r => r.status === "rejected").length);
+  if (typeof trackSync==="function") trackSync(anyOk);
+  const el = document.querySelector(".last-update");
+  if (el) {
+    const failed = results.filter(r => r.status==="rejected").length;
+    el.textContent = failed === 0
+      ? "Last sync: " + new Date().toLocaleTimeString()
+      : `Sync: ${3-failed}/3 OK — ${new Date().toLocaleTimeString()}`;
   }
 }
 
@@ -553,7 +612,8 @@ function applySummary(rows) {
       live.push({
         id, name:r[1]||"", group:r[2]||"",
         n: parseInt(r[3])||0,
-        pct: parseFloat((r[4]||"0").replace(",","."))||0
+        pct: parseFloat((r[4]||"0").replace(",","."))||0,
+        remarks: r[7]||""
       });
     }
     if (live.length > 0) updateStationCharts(live);
@@ -649,7 +709,11 @@ function buildDynCharts(gridId, defects) {
   if (!grid) return;
 
   if (defects.length === 0) {
-    grid.innerHTML = `<div class="dyn-card" style="grid-column:1/-1;text-align:center;padding:36px;color:var(--muted);font-size:13px;">No data yet — add rows to the sheet to see charts appear here.</div>`;
+    grid.innerHTML = `<div class="dyn-card" style="grid-column:1/-1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:48px 24px;gap:14px;">
+      <div style="font-size:36px;opacity:.3;">📋</div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--blue);">Nessun dato registrato</div>
+      <div style="font-size:12px;color:var(--muted);text-align:center;max-width:340px;line-height:1.6;">Aggiungi righe nella scheda corrispondente del foglio Google per visualizzare automaticamente i grafici.</div>
+    </div>`;
     return;
   }
 
@@ -734,33 +798,108 @@ function renderOrUpdate(gridId, chartId, eyebrow, title, height, type, data, opt
 }
 
 /* ── Station charts ─────────────────────────────────────────────── */
+function stationBg(s, idx) {
+  const gC = {"Forming":"rgba(0,168,255,.6)","Welding & NDT":"rgba(255,202,40,.6)","Mechanical":"rgba(255,71,87,.6)","Testing":"rgba(124,77,255,.6)","Dimensional & Final":"rgba(0,230,118,.6)"};
+  if (s.remarks && s.remarks.toUpperCase().includes("N/A")) return "rgba(74,112,144,0.2)";
+  if (s.pct === 0 && s.n === 0) return "rgba(74,112,144,0.2)";
+  return idx===0
+    ? (s.pct>=88?"rgba(0,230,118,.55)":s.pct>=50?"rgba(255,202,40,.55)":"rgba(255,71,87,.55)")
+    : (gC[s.group]||"rgba(200,200,200,.4)");
+}
+function stationBd(s, idx) {
+  const gB = {"Forming":BL,"Welding & NDT":AM,"Mechanical":RD,"Testing":PU,"Dimensional & Final":GR};
+  if ((s.remarks && s.remarks.toUpperCase().includes("N/A")) || (s.pct===0 && s.n===0)) return "rgba(74,112,144,0.4)";
+  return idx===0 ? (s.pct>=88?GR:s.pct>=50?AM:RD) : (gB[s.group]||"#aaa");
+}
+
+function stationBg(s, idx) {
+  const gC = {"Forming":"rgba(0,168,255,.6)","Welding & NDT":"rgba(255,202,40,.6)","Mechanical":"rgba(255,71,87,.6)","Testing":"rgba(124,77,255,.6)","Dimensional & Final":"rgba(0,230,118,.6)"};
+  const isNA = (s.remarks && s.remarks.toUpperCase().includes("N/A")) || (s.pct===0 && s.n===0);
+  if (isNA) return "rgba(74,112,144,0.2)";
+  return idx===0
+    ? (s.pct>=88?"rgba(0,230,118,.55)":s.pct>=50?"rgba(255,202,40,.55)":"rgba(255,71,87,.55)")
+    : (gC[s.group]||"rgba(200,200,200,.4)");
+}
+function stationBd(s, idx) {
+  const gB = {"Forming":BL,"Welding & NDT":AM,"Mechanical":RD,"Testing":PU,"Dimensional & Final":GR};
+  const isNA = (s.remarks && s.remarks.toUpperCase().includes("N/A")) || (s.pct===0 && s.n===0);
+  if (isNA) return "rgba(74,112,144,0.4)";
+  return idx===0 ? (s.pct>=88?GR:s.pct>=50?AM:RD) : (gB[s.group]||"#aaa");
+}
+
 function updateStationCharts(stations) {
   const rev = [...stations].reverse();
-  const labels = rev.map(s=>`${s.id}. ${s.name}`);
-  const data   = rev.map(s=>s.pct);
-  const bgC    = rev.map(s=>s.pct>=88?"rgba(0,230,118,.55)":s.pct>=50?"rgba(255,202,40,.55)":"rgba(255,71,87,.55)");
-  const bdC    = rev.map(s=>s.pct>=88?GR:s.pct>=50?AM:RD);
-  const gC = {"Forming":"rgba(0,168,255,.6)","Welding & NDT":"rgba(255,202,40,.6)","Mechanical":"rgba(255,71,87,.6)","Testing":"rgba(124,77,255,.6)","Dimensional & Final":"rgba(0,230,118,.6)"};
-  const gB = {"Forming":BL,"Welding & NDT":AM,"Mechanical":RD,"Testing":PU,"Dimensional & Final":GR};
-
-  [window._stationChart, window._rankingChart].forEach((ch,idx) => {
+  const labels = rev.map(s => {
+    const isNA = (s.remarks && s.remarks.toUpperCase().includes("N/A")) || (s.pct===0 && s.n===0);
+    return `${s.id}. ${s.name}${isNA ? " [N/A]" : ""}`;
+  });
+  const data = rev.map(s => s.pct);
+  [window._stationChart, window._rankingChart].forEach((ch, idx) => {
     if (!ch) return;
     ch.data.labels = labels;
     ch.data.datasets[0].data = data;
-    ch.data.datasets[0].backgroundColor = idx===0 ? bgC : rev.map(s=>gC[s.group]||"rgba(200,200,200,.4)");
-    ch.data.datasets[0].borderColor      = idx===0 ? bdC  : rev.map(s=>gB[s.group]||"#aaa");
+    ch.data.datasets[0].backgroundColor = rev.map(s => stationBg(s, idx));
+    ch.data.datasets[0].borderColor      = rev.map(s => stationBd(s, idx));
     ch.update("none");
   });
 }
 
 /* ── Live indicator ──────────────────────────────────────────────── */
-function showLiveIndicator(ok) {
+function showLiveIndicator(anyOk, failCount = 0) {
   const dot   = document.querySelector(".live-dot");
   const badge = document.querySelector(".live-badge");
   if (!dot) return;
-  dot.style.background    = ok ? "var(--green)" : "var(--amber)";
-  badge.style.borderColor = ok ? "rgba(0,230,118,0.3)" : "rgba(255,202,40,0.3)";
-  badge.title = ok ? "Live — synced from Google Sheets" : "Offline — sync failed";
+  if (!anyOk) {
+    dot.style.background    = "var(--red)";
+    badge.style.borderColor = "rgba(255,71,87,0.3)";
+    badge.style.color       = "var(--red)";
+    badge.title = "Offline — tutte le sync fallite";
+  } else if (failCount > 0) {
+    dot.style.background    = "var(--amber)";
+    badge.style.borderColor = "rgba(255,202,40,0.3)";
+    badge.style.color       = "var(--amber)";
+    badge.title = `Parziale — ${failCount} scheda/e non sincronizzata/e`;
+  } else {
+    dot.style.background    = "var(--green)";
+    badge.style.borderColor = "rgba(0,230,118,0.3)";
+    badge.style.color       = "var(--green)";
+    badge.title = "Live — sincronizzato con Google Sheets";
+  }
+}
+
+// ── Tab status dot indicator ──────────────────────────────────────────
+function setTabStatus(tabId, ok) {
+  const tab = document.querySelector(`.tab[data-tab="${tabId}"]`);
+  if (!tab) return;
+  let dot = tab.querySelector(".tab-status-dot");
+  if (!dot) {
+    dot = document.createElement("span");
+    dot.className = "tab-status-dot";
+    tab.appendChild(dot);
+  }
+  dot.style.background = ok ? "var(--green)" : "var(--red)";
+  dot.title = ok ? "Dati sincronizzati" : "Sync fallita";
+}
+
+// ── Show error banner inside a tab ───────────────────────────────────
+function showTabError(tabId, msg) {
+  const tab = document.getElementById(tabId);
+  if (!tab) return;
+  let banner = tab.querySelector(".sync-error-banner");
+  if (!banner) {
+    banner = document.createElement("div");
+    banner.className = "sync-error-banner";
+    tab.insertBefore(banner, tab.firstChild);
+  }
+  banner.innerHTML = `<span style="font-size:14px;margin-right:8px;">⚠</span>${msg}
+    <span style="margin-left:12px;font-size:10px;opacity:.7;">Ricarica la pagina o verifica Apps Script</span>`;
+  banner.style.display = "flex";
+}
+
+// ── Clear error banner ────────────────────────────────────────────────
+function clearTabError(tabId) {
+  const banner = document.querySelector(`#${tabId} .sync-error-banner`);
+  if (banner) banner.style.display = "none";
 }
 
 /* ── Helper ──────────────────────────────────────────────────────── */
@@ -794,11 +933,11 @@ const stations = [
   {id:7,name:"Fluoroscopic",group:"Welding & NDT",n:12,pct:7.06},
   {id:8,name:"Welding Repair",group:"Welding & NDT",n:4,pct:2.35},
   {id:9,name:"MCE1",group:"Mechanical",n:164,pct:96.47},
-  {id:10,name:"MCE2",group:"Mechanical",n:0,pct:0},
+  {id:10,name:"MCE2",group:"Mechanical",n:0,pct:0,remarks:"N/A"},
   {id:11,name:"MCE Inspection",group:"Mechanical",n:164,pct:96.47},
   {id:12,name:"Straightness Re-work",group:"Mechanical",n:6,pct:3.53},
   {id:13,name:"Hydro Test",group:"Testing",n:158,pct:92.94},
-  {id:14,name:"AUT2",group:"Testing",n:0,pct:0},
+  {id:14,name:"AUT2",group:"Testing",n:0,pct:0,remarks:"N/A"},
   {id:15,name:"Phase Arr.",group:"Testing",n:158,pct:92.94},
   {id:16,name:"MUT",group:"Testing",n:158,pct:92.94},
   {id:17,name:"End UT",group:"Testing",n:157,pct:92.35},
