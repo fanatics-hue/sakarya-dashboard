@@ -669,16 +669,33 @@ function applyDefectsFinal(rows) {
 /* ═══════════════════════════════════════════════════════════════════
    UPDATE TABLE — reusable for both weld and final
    ═══════════════════════════════════════════════════════════════════ */
+// Defect types that are always HIGH severity in Final Inspection
+const FINAL_HIGH_SEVERITY = ["burn through", "wall thickness below spec", "wt below spec"];
+
+function getSeverityBadge(d, isFinal) {
+  if (isFinal) {
+    const defectLower = (d.defect || "").toLowerCase();
+    if (FINAL_HIGH_SEVERITY.some(k => defectLower.includes(k))) {
+      return `<span class="badge br">HIGH</span>`;
+    }
+  }
+  // Default: severity based on extension (mm)
+  return d.ext >= 200 ? `<span class="badge br">HIGH</span>`
+       : d.ext >= 100 ? `<span class="badge ba">MED</span>`
+       : `<span class="badge bg">LOW</span>`;
+}
+
 function updateDefectTable(defects, tbodyId) {
   const tb = document.getElementById(tbodyId);
   if (!tb) return;
   tb.innerHTML = "";
+  const isFinal = tbodyId === "finalTbody";
   if (defects.length === 0) {
     tb.innerHTML = `<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:24px;font-size:12px;">No defects recorded yet</td></tr>`;
     return;
   }
   defects.forEach(d => {
-    const sv = d.ext>=200 ? `<span class="badge br">HIGH</span>` : d.ext>=100 ? `<span class="badge ba">MED</span>` : `<span class="badge bg">LOW</span>`;
+    const sv = getSeverityBadge(d, isFinal);
     tb.innerHTML += `<tr>
       <td>${d.date}</td>
       <td>${d.shift}</td>
