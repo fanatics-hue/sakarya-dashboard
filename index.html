@@ -208,11 +208,50 @@ footer{border-top:1px solid var(--border);background:rgba(6,13,26,.95);padding:2
   </div>
 </div>
 <script>
-const PWD_HASH="9aa99b6a8a36852746dfa422b627253eff0a91c8de62fac417343b0f9c47c53a";
-const SESSION_KEY="sak_auth";
+const PWD_HASH       = "9aa99b6a8a36852746dfa422b627253eff0a91c8de62fac417343b0f9c47c53a";
+const PWD_HASH_ADMIN = "5b70cd45a29270ac8048cdddcc4ed526c9a27a980e5947951ef2e419c34e01a9";
+const SESSION_KEY    = "sak_auth";
+const SESSION_ROLE   = "sak_role";
+
 async function sha256(m){const b=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(m));return Array.from(new Uint8Array(b)).map(x=>x.toString(16).padStart(2,"0")).join("");}
-async function doLogin(){const p=document.getElementById("login-pwd").value;const h=await sha256(p);if(h===PWD_HASH){sessionStorage.setItem(SESSION_KEY,"1");document.getElementById("login-screen").style.display="none";}else{const e=document.getElementById("login-err");e.textContent="Incorrect password — try again";document.getElementById("login-pwd").value="";setTimeout(()=>e.textContent="",3000);}}
-document.addEventListener("DOMContentLoaded",()=>{const i=document.getElementById("login-pwd");if(i)i.addEventListener("keydown",e=>{if(e.key==="Enter")doLogin();});if(sessionStorage.getItem(SESSION_KEY)==="1")document.getElementById("login-screen").style.display="none";});
+
+async function doLogin(){
+  const p = document.getElementById("login-pwd").value;
+  const h = await sha256(p);
+  if (h === PWD_HASH_ADMIN) {
+    sessionStorage.setItem(SESSION_KEY, "1");
+    sessionStorage.setItem(SESSION_ROLE, "admin");
+    document.getElementById("login-screen").style.display = "none";
+    applyRole("admin");
+  } else if (h === PWD_HASH) {
+    sessionStorage.setItem(SESSION_KEY, "1");
+    sessionStorage.setItem(SESSION_ROLE, "user");
+    document.getElementById("login-screen").style.display = "none";
+    applyRole("user");
+  } else {
+    const e = document.getElementById("login-err");
+    e.textContent = "Incorrect password — try again";
+    document.getElementById("login-pwd").value = "";
+    setTimeout(() => e.textContent = "", 3000);
+  }
+}
+
+function applyRole(role) {
+  const btn = document.getElementById("admin-print-btn");
+  if (!btn) return;
+  btn.style.display = role === "admin" ? "flex" : "none";
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  const i = document.getElementById("login-pwd");
+  if (i) i.addEventListener("keydown", e => { if(e.key==="Enter") doLogin(); });
+  const stored = sessionStorage.getItem(SESSION_KEY);
+  const role   = sessionStorage.getItem(SESSION_ROLE) || "user";
+  if (stored === "1") {
+    document.getElementById("login-screen").style.display = "none";
+    applyRole(role);
+  }
+});
 </script>
 
 <div class="bg-grid"></div>
@@ -237,6 +276,11 @@ document.addEventListener("DOMContentLoaded",()=>{const i=document.getElementByI
   <div class="tab" data-tab="ndt">ITP Steps</div>
   <div class="tab" data-tab="defects">Defects Log</div>
   <div class="tab" data-tab="final">Final Inspection</div>
+  <div style="flex:1;"></div>
+  <button id="admin-print-btn" onclick="printReport()" style="display:none;align-items:center;gap:8px;margin:8px 0;padding:7px 18px;background:linear-gradient(90deg,var(--blue),var(--teal));border:none;border-radius:6px;font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:#060d1a;cursor:pointer;transition:opacity .2s;" onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+    Print Report
+  </button>
 </nav>
 
 <main>
@@ -1109,6 +1153,172 @@ function exportPDF(tableId, title) {
     </html>`;
 
   const win = window.open("","_blank","width=1100,height=800");
+  win.document.write(html);
+  win.document.close();
+  win.onload = () => { win.focus(); win.print(); };
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   ADMIN — PRINT INSPECTION REPORT
+   ═══════════════════════════════════════════════════════════════════ */
+function printReport() {
+  // Gather live data from DOM
+  const get = id => document.getElementById(id)?.textContent?.trim() || "—";
+
+  const reportDate   = get("hdr-date-val").replace(/ \/ /g, "/");
+  const poQty        = get("po-qty");
+  const accepted     = get("po-accepted");
+  const rejected     = get("ss-rej");
+  const repair       = get("ss-rep");
+  const incoming     = get("ss-total");
+  const passRate     = get("kpi-rate");
+  const completion   = get("po-completion");
+
+  // Welding defects rows
+  const weldRows = Array.from(document.querySelectorAll("#defectTbody tr")).map(r => {
+    const cells = r.querySelectorAll("td");
+    if (!cells.length) return null;
+    return [cells[0]?.textContent||"", cells[1]?.textContent||"", cells[2]?.textContent||"",
+            cells[3]?.textContent||"", cells[4]?.textContent||"", cells[5]?.textContent||"",
+            cells[6]?.textContent?.trim()||""];
+  }).filter(Boolean);
+
+  // Final defects rows
+  const finalRows = Array.from(document.querySelectorAll("#finalTbody tr")).map(r => {
+    const cells = r.querySelectorAll("td");
+    if (!cells.length) return null;
+    return [cells[0]?.textContent||"", cells[1]?.textContent||"", cells[2]?.textContent||"",
+            cells[3]?.textContent||"", cells[4]?.textContent||"", cells[5]?.textContent||"",
+            cells[6]?.textContent?.trim()||""];
+  }).filter(Boolean);
+
+  const weldTableRows = weldRows.length ? weldRows.map(r => `
+    <tr>
+      <td>${r[0]}</td><td>${r[1]}</td>
+      <td style="font-family:monospace;font-size:10px">${r[2]}</td>
+      <td>${r[3]}</td><td>${r[4]}</td><td>${r[5]}</td>
+      <td><span class="sev sev-${r[6].toLowerCase()}">${r[6]}</span></td>
+    </tr>`).join("") :
+    '<tr><td colspan="7" style="text-align:center;color:#888;padding:16px">No welding defects recorded</td></tr>';
+
+  const finalTableRows = finalRows.length ? finalRows.map(r => `
+    <tr>
+      <td>${r[0]}</td><td>${r[1]}</td>
+      <td style="font-family:monospace;font-size:10px">${r[2]}</td>
+      <td>${r[3]}</td><td>${r[4]}</td><td>${r[5]}</td>
+      <td><span class="sev sev-${r[6].toLowerCase()}">${r[6]}</span></td>
+    </tr>`).join("") :
+    '<tr><td colspan="7" style="text-align:center;color:#888;padding:16px">No final defects recorded</td></tr>';
+
+  // ITP Steps from static data
+  const itpRows = document.querySelectorAll("#rankingChart");
+  const stationLabels = window._rankingChart?.data?.labels || [];
+  const stationData   = window._rankingChart?.data?.datasets?.[0]?.data || [];
+  const itpTableRows = stationLabels.map((lbl, i) => {
+    const pct = stationData[i] || 0;
+    const isNA = lbl.includes("[N/A]");
+    const statusColor = isNA ? "#888" : pct >= 88 ? "#00703c" : pct >= 50 ? "#856404" : "#b91c1c";
+    const statusText  = isNA ? "N/A" : pct >= 88 ? "PASS" : pct >= 50 ? "WARN" : "LOW";
+    return `<tr>
+      <td style="color:#555">${stationLabels.length - i}</td>
+      <td>${lbl.replace(" [N/A]","")}</td>
+      <td style="color:${statusColor};font-weight:600">${isNA ? "—" : pct.toFixed(2)+"%"}</td>
+      <td><span style="color:${statusColor};font-weight:700;font-size:10px">${statusText}</span></td>
+    </tr>`;
+  }).join("");
+
+  const html = `<!DOCTYPE html><html><head><meta charset="UTF-8">
+  <title>Sakarya QC Inspection Report — ${reportDate}</title>
+  <style>
+    @page { size: A4; margin: 15mm 18mm 18mm 18mm; }
+    @media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Arial, sans-serif; font-size: 10px; color: #1a1a2e; }
+    .page-header { display:flex; align-items:center; justify-content:space-between; padding-bottom:8px; border-bottom:2px solid #003a6b; margin-bottom:14px; }
+    .page-header img { height:28px; }
+    .page-header .hdr-right { text-align:right; }
+    .page-header .hdr-right .title { font-size:13px; font-weight:700; color:#003a6b; }
+    .page-header .hdr-right .sub { font-size:9px; color:#64748b; margin-top:2px; }
+    h2 { font-size:11px; font-weight:700; color:#fff; background:#003a6b; padding:5px 10px; margin:14px 0 6px; }
+    .kpi-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-bottom:12px; }
+    .kpi { background:#f0f5ff; border:1px solid #c7d9f5; border-radius:6px; padding:10px 12px; text-align:center; }
+    .kpi .val { font-size:22px; font-weight:800; color:#003a6b; line-height:1.1; }
+    .kpi .lbl { font-size:8px; color:#64748b; text-transform:uppercase; letter-spacing:0.5px; margin-top:3px; }
+    .info-strip { display:grid; grid-template-columns:repeat(4,1fr); gap:6px; margin-bottom:12px; }
+    .info-item { background:#f8fafc; border:1px solid #e2e8f0; border-radius:4px; padding:6px 10px; }
+    .info-item .il { font-size:8px; color:#64748b; text-transform:uppercase; }
+    .info-item .iv { font-size:11px; font-weight:600; color:#1a1a2e; margin-top:2px; }
+    table { width:100%; border-collapse:collapse; font-size:9px; }
+    thead th { background:#003a6b; color:#fff; padding:5px 7px; text-align:left; font-size:8px; letter-spacing:0.5px; text-transform:uppercase; }
+    tbody tr:nth-child(even) { background:#f8fafc; }
+    tbody td { padding:5px 7px; border-bottom:1px solid #e2e8f0; }
+    .sev { display:inline-block; padding:2px 7px; border-radius:3px; font-size:8px; font-weight:700; text-transform:uppercase; }
+    .sev-high,.sev-HIGH { background:#fee2e2; color:#b91c1c; }
+    .sev-med,.sev-MED   { background:#fef3c7; color:#92400e; }
+    .sev-low,.sev-LOW   { background:#d1fae5; color:#065f46; }
+    .footer { margin-top:16px; padding-top:6px; border-top:1px solid #e2e8f0; font-size:8px; color:#94a3b8; text-align:center; }
+    .page-break { page-break-before: always; }
+  </style>
+  </head><body>
+
+  <div class="page-header">
+    <img src="${document.querySelector('.login-logo img')?.src || ''}" alt="IQS">
+    <div class="hdr-right">
+      <div class="title">SAKARYA GAS FIELD DEVELOPMENT — PROJECT PHASE 3</div>
+      <div class="sub">QC Inspection Report &nbsp;·&nbsp; Report Date: ${reportDate} &nbsp;·&nbsp; IQS S.r.l. Worldwide Inspection Company</div>
+    </div>
+  </div>
+
+  <h2>Key Performance Indicators</h2>
+  <div class="kpi-grid">
+    <div class="kpi"><div class="val">${poQty}</div><div class="lbl">PO Quantity</div></div>
+    <div class="kpi"><div class="val" style="color:#00703c">${accepted}</div><div class="lbl">Pipes Accepted</div></div>
+    <div class="kpi"><div class="val" style="color:#b45309">${passRate}</div><div class="lbl">Pass Rate</div></div>
+    <div class="kpi"><div class="val" style="color:#b91c1c">${rejected}</div><div class="lbl">Pipes Rejected</div></div>
+  </div>
+  <div class="info-strip">
+    <div class="info-item"><div class="il">Incoming Plates</div><div class="iv">${incoming}</div></div>
+    <div class="info-item"><div class="il">Repair / Rework</div><div class="iv">${repair}</div></div>
+    <div class="info-item"><div class="il">Completion vs PO</div><div class="iv">${completion}</div></div>
+    <div class="info-item"><div class="il">Report Date</div><div class="iv">${reportDate}</div></div>
+  </div>
+
+  <h2>Welding Defects Log</h2>
+  <table>
+    <thead><tr><th>Date</th><th>Shift</th><th>Pipe N°</th><th>Defect Description</th><th>Position (mm)</th><th>Extension (mm)</th><th>Severity</th></tr></thead>
+    <tbody>${weldTableRows}</tbody>
+  </table>
+
+  <div class="page-break"></div>
+
+  <div class="page-header">
+    <img src="${document.querySelector('.login-logo img')?.src || ''}" alt="IQS">
+    <div class="hdr-right">
+      <div class="title">SAKARYA GAS FIELD DEVELOPMENT — PROJECT PHASE 3</div>
+      <div class="sub">QC Inspection Report &nbsp;·&nbsp; Report Date: ${reportDate}</div>
+    </div>
+  </div>
+
+  <h2>Final Inspection Defects</h2>
+  <table>
+    <thead><tr><th>Date</th><th>Shift</th><th>Pipe N°</th><th>Defect Description</th><th>Position (mm)</th><th>Extension (mm)</th><th>Severity</th></tr></thead>
+    <tbody>${finalTableRows}</tbody>
+  </table>
+
+  <div style="height:12px"></div>
+  <h2>ITP Steps — Pass Rate</h2>
+  <table>
+    <thead><tr><th style="width:30px">#</th><th>ITP Step</th><th style="width:70px">Yield %</th><th style="width:50px">Status</th></tr></thead>
+    <tbody>${itpTableRows}</tbody>
+  </table>
+
+  <div class="footer">
+    IQS S.r.l. · Via Europa 42, 20097 S. Donato Mil.se (MI) · +39 02 49532180 · www.iqs-ww.com &nbsp;|&nbsp;
+    Printed: ${new Date().toLocaleString()} &nbsp;|&nbsp; CONFIDENTIAL
+  </div>
+  </body></html>`;
+
+  const win = window.open("", "_blank", "width=900,height=1100");
   win.document.write(html);
   win.document.close();
   win.onload = () => { win.focus(); win.print(); };
