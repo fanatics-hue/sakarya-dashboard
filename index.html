@@ -322,8 +322,14 @@ function updateBadges(weldCount, finalCount) {
   if (!document.body.classList.contains("admin-mode")) return;
   const bw = document.getElementById("badge-defects");
   const bf = document.getElementById("badge-final");
-  if (bw) { bw.textContent = weldCount; bw.style.display = weldCount > 0 ? "inline-flex" : "none"; }
-  if (bf) { bf.textContent = finalCount; bf.style.display = finalCount > 0 ? "inline-flex" : "none"; }
+  if (bw) {
+    bw.textContent = weldCount;
+    bw.style.display = weldCount > 0 ? "inline-flex" : "none";
+  }
+  if (bf) {
+    bf.textContent = finalCount;
+    bf.style.display = finalCount > 0 ? "inline-flex" : "none";
+  }
 }
 
 /* ── Check pass rate alert ───────────────────────────────────── */
@@ -831,7 +837,8 @@ function applyDefectsWeld(rows) {
 
   updateDefectTable(defects, "defectTbody");
   buildDynCharts("weld-charts-grid", defects);
-  updateBadges(defects.length, parseInt(document.getElementById("badge-final")?.textContent)||0);
+  window._weldCount = defects.length;
+  updateBadges(window._weldCount, window._finalCount || 0);
 }
 
 /* ═══════════════════════════════════════════════════════════════════
@@ -854,7 +861,8 @@ function applyDefectsFinal(rows) {
 
   updateDefectTable(defects, "finalTbody");
   buildDynCharts("final-charts-grid", defects);
-  updateBadges(parseInt(document.getElementById("badge-defects")?.textContent)||0, defects.length);
+  window._finalCount = defects.length;
+  updateBadges(window._weldCount || 0, window._finalCount);
 }
 
 /* ═══════════════════════════════════════════════════════════════════
