@@ -147,6 +147,26 @@ footer{border-top:1px solid var(--border);background:rgba(6,13,26,.95);padding:2
 ::-webkit-scrollbar-thumb{background:var(--s3);border-radius:3px;}
 ::-webkit-scrollbar-thumb:hover{background:var(--blue);}
 .tab-status-dot{display:inline-block;width:5px;height:5px;border-radius:50%;background:var(--muted);margin-left:7px;vertical-align:middle;transition:background .3s;}
+/* Admin features */
+.tab-badge{display:none;align-items:center;justify-content:center;background:var(--red);color:#fff;font-family:'JetBrains Mono',monospace;font-size:8px;font-weight:700;border-radius:10px;padding:1px 6px;margin-left:6px;min-width:16px;line-height:16px;vertical-align:middle;}
+.admin-visible{display:none;}
+body.admin-mode .admin-visible{display:flex;}
+body.admin-mode .tab-badge{display:inline-flex;}
+.theme-btn{position:fixed;bottom:24px;right:24px;width:42px;height:42px;border-radius:50%;background:var(--s1);border:1px solid var(--border);color:var(--muted);font-size:18px;cursor:pointer;display:none;align-items:center;justify-content:center;z-index:100;transition:all .2s;box-shadow:0 2px 12px rgba(0,0,0,.3);}
+.theme-btn:hover{border-color:var(--blue);color:var(--blue);}
+body.admin-mode .theme-btn{display:flex;}
+.alert-banner{display:none;align-items:center;gap:12px;background:rgba(255,71,87,.08);border:1px solid rgba(255,71,87,.3);border-radius:var(--r);padding:10px 18px;margin-bottom:16px;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--red);animation:fadeIn .3s ease;}
+.alert-banner.show{display:flex;}
+.alert-banner svg{flex-shrink:0;}
+/* Light theme */
+body.light{--bg:#f0f4f8;--s1:#ffffff;--s2:#f8fafc;--s3:#e2e8f0;--border:rgba(0,100,200,0.15);--text:#0f172a;--muted:#64748b;}
+body.light .brand-title{background:linear-gradient(90deg,#0050a0,#006080);-webkit-background-clip:text;background-clip:text;}
+body.light header,body.light nav{background:rgba(240,244,248,0.95);}
+/* KPI counter animation */
+@keyframes countUp{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
+.kpi-val.counting{animation:countUp .6s ease;}
+/* Excel export btn */
+.btn-export.xl:hover{border-color:var(--green);color:var(--green);background:rgba(0,230,118,.06);}
 .sync-error-banner{display:none;align-items:center;background:rgba(255,71,87,0.08);border:1px solid rgba(255,71,87,0.25);border-radius:var(--r);padding:12px 18px;margin-bottom:18px;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:1px;color:var(--red);}
 /* ── RESPONSIVE MOBILE ── */
 @media(max-width:960px){
@@ -237,9 +257,111 @@ async function doLogin(){
 }
 
 function applyRole(role) {
+  const isAdmin = role === "admin";
+  // Print button
   const btn = document.getElementById("admin-print-btn");
-  if (!btn) return;
-  btn.style.display = role === "admin" ? "flex" : "none";
+  if (btn) btn.style.display = isAdmin ? "flex" : "none";
+  // Admin mode class on body (controls all .admin-visible elements)
+  if (isAdmin) {
+    document.body.classList.add("admin-mode");
+    initAdminFeatures();
+  } else {
+    document.body.classList.remove("admin-mode");
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   ADMIN FEATURES
+   ═══════════════════════════════════════════════════════════════ */
+function initAdminFeatures() {
+  // Theme toggle
+  const themeBtn = document.getElementById("theme-btn");
+  if (themeBtn) {
+    let light = false;
+    themeBtn.addEventListener("click", () => {
+      light = !light;
+      document.body.classList.toggle("light", light);
+      themeBtn.textContent = light ? "🌙" : "☀️";
+      themeBtn.title = light ? "Switch to Dark mode" : "Switch to Light mode";
+    });
+  }
+  // Excel export
+  const xlWeld  = document.getElementById("xl-weld-btn");
+  const xlFinal = document.getElementById("xl-final-btn");
+  if (xlWeld)  xlWeld.addEventListener("click",  () => exportXLSX("defectTbody",  "defectTable",  "welding_defects"));
+  if (xlFinal) xlFinal.addEventListener("click", () => exportXLSX("finalTbody",   "finalTable",   "final_defects"));
+}
+
+/* ── Animate KPI counters (admin) ─────────────────────────────── */
+function animateCounter(el, target, isFloat) {
+  if (!el) return;
+  el.classList.add("counting");
+  const duration = 900;
+  const start    = Date.now();
+  const from     = 0;
+  const num      = isFloat ? parseFloat(target) : parseInt(target.replace(/[^0-9]/g,"")) || 0;
+  const suffix   = isFloat ? "%" : (target.includes(",") || target.includes(".") ? "" : "");
+  function tick() {
+    const elapsed = Date.now() - start;
+    const progress = Math.min(elapsed / duration, 1);
+    const ease = 1 - Math.pow(1 - progress, 3);
+    const current = from + (num - from) * ease;
+    if (isFloat) {
+      el.textContent = current.toFixed(1) + "%";
+    } else {
+      el.textContent = Math.round(current).toLocaleString();
+    }
+    if (progress < 1) requestAnimationFrame(tick);
+    else el.textContent = target;
+  }
+  tick();
+}
+
+/* ── Update badge counts ─────────────────────────────────────── */
+function updateBadges(weldCount, finalCount) {
+  if (!document.body.classList.contains("admin-mode")) return;
+  const bw = document.getElementById("badge-defects");
+  const bf = document.getElementById("badge-final");
+  if (bw) { bw.textContent = weldCount; bw.style.display = weldCount > 0 ? "inline-flex" : "none"; }
+  if (bf) { bf.textContent = finalCount; bf.style.display = finalCount > 0 ? "inline-flex" : "none"; }
+}
+
+/* ── Check pass rate alert ───────────────────────────────────── */
+function checkPassRateAlert(passRate) {
+  if (!document.body.classList.contains("admin-mode")) return;
+  const banner = document.getElementById("pass-rate-alert");
+  const text   = document.getElementById("alert-text");
+  if (!banner) return;
+  const THRESHOLD = 85;
+  if (passRate < THRESHOLD) {
+    banner.classList.add("show");
+    if (text) text.textContent = `⚠  Pass Rate (${passRate.toFixed(1)}%) sotto la soglia critica del ${THRESHOLD}% — verificare immediatamente`;
+  } else {
+    banner.classList.remove("show");
+  }
+}
+
+/* ── Export XLSX (via CSV trick with .xls extension) ─────────── */
+function exportXLSX(tbodyId, tableId, filename) {
+  const table = document.getElementById(tableId);
+  if (!table) return;
+  const headers = Array.from(table.querySelectorAll("thead th")).map(th => th.textContent.replace(/[↕]/g,"").trim());
+  const rows    = Array.from(document.getElementById(tbodyId).querySelectorAll("tr"))
+                      .filter(r => r.style.display !== "none");
+  if (!rows.length) { alert("No data to export."); return; }
+  // Build tab-separated (TSV) which Excel opens natively
+  const lines = [headers.join("	")];
+  rows.forEach(r => {
+    const cells = Array.from(r.querySelectorAll("td")).map(td => td.textContent.trim().replace(/\s+/g," "));
+    lines.push(cells.join("	"));
+  });
+  const blob = new Blob([lines.join("\n")], {type:"text/tab-separated-values;charset=utf-8;"});
+
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement("a");
+  const date = new Date().toISOString().slice(0,10);
+  a.href = url; a.download = `${filename}_${date}.xls`; a.click();
+  URL.revokeObjectURL(url);
 }
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -257,6 +379,8 @@ document.addEventListener("DOMContentLoaded", () => {
 <div class="bg-grid"></div>
 <div class="bg-glow bg-glow-1"></div>
 <div class="bg-glow bg-glow-2"></div>
+<!-- Theme toggle (admin only) -->
+<button class="theme-btn" id="theme-btn" title="Toggle Light/Dark mode">☀️</button>
 <div class="wrap">
 
 <header>
@@ -274,8 +398,8 @@ document.addEventListener("DOMContentLoaded", () => {
   <div class="tab active" data-tab="project">Project Info</div>
   <div class="tab" data-tab="overview">Overview</div>
   <div class="tab" data-tab="ndt">ITP Steps</div>
-  <div class="tab" data-tab="defects">Defects Log</div>
-  <div class="tab" data-tab="final">Final Inspection</div>
+  <div class="tab" data-tab="defects">Defects Log<span class="tab-badge" id="badge-defects">0</span></div>
+  <div class="tab" data-tab="final">Final Inspection<span class="tab-badge" id="badge-final">0</span></div>
   <div style="flex:1;"></div>
   <button id="admin-print-btn" style="display:none;align-items:center;gap:8px;margin:8px 0;padding:7px 18px;background:linear-gradient(90deg,var(--blue),var(--teal));border:none;border-radius:6px;font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:#060d1a;cursor:pointer;transition:opacity .2s;" onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">
     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
@@ -333,6 +457,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
 <!-- ═══════ OVERVIEW — DYNAMIC ═══════ -->
 <div class="tab-content" id="overview">
+  <div class="alert-banner admin-visible" id="pass-rate-alert">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    <span id="alert-text">⚠ Pass Rate sotto soglia critica (85%)</span>
+  </div>
   <div class="sl">Key Performance Indicators</div>
   <div class="kpi-grid">
     <div class="kpi">
@@ -405,6 +533,10 @@ document.addEventListener("DOMContentLoaded", () => {
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
           CSV
         </button>
+        <button class="btn-export xl admin-visible" id="xl-weld-btn" title="Export Excel">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="18" rx="2"/><path d="M8 3v18M16 3v18M2 9h20M2 15h20"/></svg>
+          XLSX
+        </button>
         <button class="btn-export" onclick="exportPDF('defectTable','Welding Defects Log')">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
           PDF
@@ -442,6 +574,10 @@ document.addEventListener("DOMContentLoaded", () => {
         <button class="btn-export csv" onclick="exportCSV('finalTbody','final_defects')">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
           CSV
+        </button>
+        <button class="btn-export xl admin-visible" id="xl-final-btn" title="Export Excel">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="18" rx="2"/><path d="M8 3v18M16 3v18M2 9h20M2 15h20"/></svg>
+          XLSX
         </button>
         <button class="btn-export" onclick="exportPDF('finalTable','Final Defects Log')">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
@@ -597,10 +733,18 @@ function applySummary(rows) {
   const completion = ((accepted/poQty)*100).toFixed(2);
 
   // KPI cards
-  setT("kpi-po", poQty.toLocaleString());
-  setT("kpi-accepted", accepted.toLocaleString());
-  setT("kpi-rate", passRate.toFixed(1)+"%");
-  setT("kpi-rejected", rejected.toLocaleString());
+  if (document.body.classList.contains("admin-mode")) {
+    animateCounter(document.getElementById("kpi-po"),       poQty.toLocaleString(),    false);
+    animateCounter(document.getElementById("kpi-accepted"), accepted.toLocaleString(), false);
+    animateCounter(document.getElementById("kpi-rate"),     passRate.toFixed(1)+"%",   true);
+    animateCounter(document.getElementById("kpi-rejected"), rejected.toLocaleString(), false);
+  } else {
+    setT("kpi-po", poQty.toLocaleString());
+    setT("kpi-accepted", accepted.toLocaleString());
+    setT("kpi-rate", passRate.toFixed(1)+"%");
+    setT("kpi-rejected", rejected.toLocaleString());
+  }
+  checkPassRateAlert(passRate);
   setT("kpi-rate-sub", `Accepted / Inspected (${accepted}/${incoming})`);
   const inc = document.getElementById("kpi-incoming");
   if (inc) inc.textContent = `${incoming.toLocaleString()} Incoming Plates`;
@@ -687,6 +831,7 @@ function applyDefectsWeld(rows) {
 
   updateDefectTable(defects, "defectTbody");
   buildDynCharts("weld-charts-grid", defects);
+  updateBadges(defects.length, parseInt(document.getElementById("badge-final")?.textContent)||0);
 }
 
 /* ═══════════════════════════════════════════════════════════════════
@@ -709,6 +854,7 @@ function applyDefectsFinal(rows) {
 
   updateDefectTable(defects, "finalTbody");
   buildDynCharts("final-charts-grid", defects);
+  updateBadges(parseInt(document.getElementById("badge-defects")?.textContent)||0, defects.length);
 }
 
 /* ═══════════════════════════════════════════════════════════════════
