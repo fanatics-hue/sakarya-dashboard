@@ -47,8 +47,13 @@ main{padding:36px 52px;}
 .sl::before{content:'';width:20px;height:2px;background:linear-gradient(90deg,var(--blue),var(--teal));border-radius:1px;flex-shrink:0;}
 .sl::after{content:'';flex:1;height:1px;background:var(--border);}
 .kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px;}
-.kpi{background:var(--s1);border:1px solid var(--border);border-radius:var(--r);padding:22px 26px 18px;position:relative;overflow:hidden;transition:transform .2s,border-color .2s;}
-.kpi:hover{transform:translateY(-3px);border-color:rgba(0,168,255,.3);}
+.kpi{background:var(--s1);border:1px solid var(--border);border-radius:var(--r);padding:22px 26px 18px;position:relative;overflow:hidden;transition:transform .2s,border-color .2s,box-shadow .2s;}
+.kpi:hover{transform:translateY(-3px);}
+.kpi:hover .kpi-bar{opacity:1;}
+.kpi.g-green:hover{border-color:rgba(0,230,118,.4);box-shadow:0 8px 24px rgba(0,230,118,.08);}
+.kpi.g-amber:hover{border-color:rgba(255,202,40,.4);box-shadow:0 8px 24px rgba(255,202,40,.08);}
+.kpi.g-red:hover{border-color:rgba(255,71,87,.4);box-shadow:0 8px 24px rgba(255,71,87,.08);}
+.kpi:not([class*="g-"]):hover{border-color:rgba(0,168,255,.4);box-shadow:0 8px 24px rgba(0,168,255,.08);}
 .kpi-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;}
 .kpi-label{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);}
 .kpi-icon{font-size:18px;opacity:.6;}
@@ -61,8 +66,8 @@ main{padding:36px 52px;}
 .g2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;}
 .g3{display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-bottom:16px;}
 .g1{margin-bottom:16px;}
-.card{background:var(--s1);border:1px solid var(--border);border-radius:var(--r);padding:26px;transition:border-color .2s;}
-.card:hover{border-color:rgba(0,168,255,.25);}
+.card{background:var(--s1);border:1px solid var(--border);border-radius:var(--r);padding:26px;transition:border-color .2s,box-shadow .2s;}
+.card:hover{border-color:rgba(0,168,255,.25);box-shadow:0 4px 20px rgba(0,168,255,.05);}
 .card-ey{font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:3px;text-transform:uppercase;color:var(--blue);margin-bottom:4px;}
 .card-title{font-size:17px;font-weight:700;color:var(--text);margin-bottom:20px;}
 .cw{position:relative;}
@@ -92,9 +97,19 @@ main{padding:36px 52px;}
 .pr{display:flex;align-items:center;gap:12px;margin-bottom:11px;}
 .pr-lbl{font-size:11px;color:var(--muted);width:160px;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .pr-track{flex:1;height:5px;background:rgba(255,255,255,.05);border-radius:3px;overflow:hidden;}
-.pr-fill{height:100%;border-radius:3px;transition:width 1.2s cubic-bezier(.4,0,.2,1);}
+.pr-fill{height:100%;border-radius:3px;transition:width 1.3s cubic-bezier(.4,0,.2,1);}
 .pr-val{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text);width:40px;text-align:right;flex-shrink:0;}
 .sstrip{display:flex;border:1px solid var(--border);background:var(--s1);border-radius:var(--r);overflow:hidden;margin-bottom:16px;}
+/* Gauge bars */
+.gauge-row{display:flex;gap:10px;margin-bottom:16px;}
+.gauge-card{flex:1;background:var(--s1);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;}
+.gauge-label{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+.gauge-name{font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);}
+.gauge-val{font-size:13px;font-weight:700;color:var(--text);}
+.gauge-track{height:6px;background:rgba(255,255,255,0.05);border-radius:3px;overflow:visible;position:relative;}
+.gauge-fill{height:6px;border-radius:3px;width:0;transition:width 1.4s cubic-bezier(.4,0,.2,1);position:relative;}
+.gauge-fill::after{content:'';position:absolute;right:-1px;top:-3px;width:12px;height:12px;border-radius:50%;background:inherit;opacity:.9;transition:box-shadow .3s;}
+.gauge-card:hover .gauge-fill::after{box-shadow:0 0 10px 2px currentColor;}
 .ss{flex:1;padding:18px 22px;border-right:1px solid var(--border);position:relative;}
 .ss:last-child{border-right:none;}
 .ss::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:var(--sc,linear-gradient(90deg,var(--blue),var(--teal)));}
@@ -293,26 +308,20 @@ function initAdminFeatures() {
 }
 
 /* ── Animate KPI counters (admin) ─────────────────────────────── */
-function animateCounter(el, target, isFloat) {
+function animateCounter(el, target, isFloat, duration) {
   if (!el) return;
   el.classList.add("counting");
-  const duration = 900;
-  const start    = Date.now();
-  const from     = 0;
-  const num      = isFloat ? parseFloat(target) : parseInt(target.replace(/[^0-9]/g,"")) || 0;
-  const suffix   = isFloat ? "%" : (target.includes(",") || target.includes(".") ? "" : "");
+  duration = duration || 900;
+  const num   = typeof target === "number" ? target : (isFloat ? parseFloat(target) : parseInt((target+"").replace(/[^0-9.]/g,"")) || 0);
+  const start = Date.now();
   function tick() {
-    const elapsed = Date.now() - start;
+    const elapsed  = Date.now() - start;
     const progress = Math.min(elapsed / duration, 1);
-    const ease = 1 - Math.pow(1 - progress, 3);
-    const current = from + (num - from) * ease;
-    if (isFloat) {
-      el.textContent = current.toFixed(1) + "%";
-    } else {
-      el.textContent = Math.round(current).toLocaleString();
-    }
+    const ease     = 1 - Math.pow(1 - progress, 3);
+    const current  = num * ease;
+    el.textContent = isFloat ? current.toFixed(1) + "%" : Math.round(current).toLocaleString();
     if (progress < 1) requestAnimationFrame(tick);
-    else el.textContent = target;
+    else el.textContent = isFloat ? num.toFixed(1) + "%" : num.toLocaleString();
   }
   tick();
 }
@@ -385,6 +394,7 @@ document.addEventListener("DOMContentLoaded", () => {
 <div class="bg-grid"></div>
 <div class="bg-glow bg-glow-1"></div>
 <div class="bg-glow bg-glow-2"></div>
+<div style="position:fixed;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,transparent,#00a8ff 20%,#00e5c8 50%,#7c4dff 80%,transparent);z-index:300;pointer-events:none;"></div>
 <!-- Theme toggle (admin only) -->
 <button class="theme-btn" id="theme-btn" title="Toggle Light/Dark mode">☀️</button>
 <div class="wrap">
@@ -463,7 +473,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 <!-- ═══════ OVERVIEW — DYNAMIC ═══════ -->
 <div class="tab-content" id="overview">
-  <div class="alert-banner admin-visible" id="pass-rate-alert">
+  <div class="alert-banner" id="pass-rate-alert">
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
     <span id="alert-text">⚠ Pass Rate sotto soglia critica (85%)</span>
   </div>
@@ -483,6 +493,26 @@ document.addEventListener("DOMContentLoaded", () => {
     <div class="kpi g-amber"><div class="kpi-top"><div class="kpi-label">Acceptance Rate</div><div class="kpi-icon">◎</div></div><div class="kpi-val" id="kpi-rate">87.6%</div><div class="kpi-sub" id="kpi-rate-sub">Accepted / Inspected (149/170)</div><div class="kpi-bar"></div></div>
     <div class="kpi g-red"><div class="kpi-top"><div class="kpi-label">Pipes Rejected</div><div class="kpi-icon">✕</div></div><div class="kpi-val" id="kpi-rejected">3</div><div class="kpi-sub">Definitively rejected</div><div class="kpi-bar"></div></div>
   </div>
+  <!-- Gauge bars row -->
+  <div class="gauge-row" id="gauge-row">
+    <div class="gauge-card">
+      <div class="gauge-label"><span class="gauge-name">Pass Rate</span><span class="gauge-val" id="g-passrate">87.6%</span></div>
+      <div class="gauge-track"><div class="gauge-fill" id="gf-passrate" style="background:linear-gradient(90deg,#ffca28,#ff9800)"></div></div>
+    </div>
+    <div class="gauge-card">
+      <div class="gauge-label"><span class="gauge-name">Completion vs PO</span><span class="gauge-val" id="g-completion">0.96%</span></div>
+      <div class="gauge-track"><div class="gauge-fill" id="gf-completion" style="background:linear-gradient(90deg,#00a8ff,#00e5c8)"></div></div>
+    </div>
+    <div class="gauge-card">
+      <div class="gauge-label"><span class="gauge-name">Accepted / Incoming</span><span class="gauge-val" id="g-accepted">149 / 170</span></div>
+      <div class="gauge-track"><div class="gauge-fill" id="gf-accepted" style="background:linear-gradient(90deg,#00e676,#00bfa5)"></div></div>
+    </div>
+    <div class="gauge-card">
+      <div class="gauge-label"><span class="gauge-name">Repair / Rework</span><span class="gauge-val" id="g-repair">4 pipes</span></div>
+      <div class="gauge-track"><div class="gauge-fill" id="gf-repair" style="background:linear-gradient(90deg,#7c4dff,#e040fb)"></div></div>
+    </div>
+  </div>
+
   <div class="g3">
     <div class="card"><div class="card-ey">ITP Step Performance</div><div class="card-title">Pass Rate by ITP Step</div><div class="cw" style="height:310px"><canvas id="stationChart"></canvas></div></div>
     <div class="card">
@@ -741,18 +771,20 @@ function applySummary(rows) {
   const reportDate = kpi["Report Date"] || "10/03/2026";
   const completion = ((accepted/poQty)*100).toFixed(2);
 
-  // KPI cards
-  if (document.body.classList.contains("admin-mode")) {
-    animateCounter(document.getElementById("kpi-po"),       poQty.toLocaleString(),    false);
-    animateCounter(document.getElementById("kpi-accepted"), accepted.toLocaleString(), false);
-    animateCounter(document.getElementById("kpi-rate"),     passRate.toFixed(1)+"%",   true);
-    animateCounter(document.getElementById("kpi-rejected"), rejected.toLocaleString(), false);
-  } else {
-    setT("kpi-po", poQty.toLocaleString());
-    setT("kpi-accepted", accepted.toLocaleString());
-    setT("kpi-rate", passRate.toFixed(1)+"%");
-    setT("kpi-rejected", rejected.toLocaleString());
-  }
+  // KPI cards — always animate
+  animateCounter(document.getElementById("kpi-po"),       poQty,     false, 1200);
+  animateCounter(document.getElementById("kpi-accepted"), accepted,  false, 900);
+  animateCounter(document.getElementById("kpi-rate"),     passRate,  true,  1000);
+  animateCounter(document.getElementById("kpi-rejected"), rejected,  false, 700);
+  // Strip numbers
+  animateCounter(document.getElementById("ss-total"),     incoming,  false, 900);
+  animateCounter(document.getElementById("ss-acc"),       accepted,  false, 900);
+  animateCounter(document.getElementById("ss-rep"),       repair,    false, 700);
+  animateCounter(document.getElementById("ss-rej"),       rejected,  false, 700);
+  // Progress bar values
+  animateCounter(document.getElementById("pr-acc-v"),     accepted,  false, 900);
+  animateCounter(document.getElementById("pr-rep-v"),     repair,    false, 700);
+  animateCounter(document.getElementById("pr-rej-v"),     rejected,  false, 700);
   checkPassRateAlert(passRate);
   setT("kpi-rate-sub", `Accepted / Inspected (${accepted}/${incoming})`);
   const inc = document.getElementById("kpi-incoming");
@@ -760,7 +792,7 @@ function applySummary(rows) {
 
   // Completion bar
   const cb = document.getElementById("kpi-compl-bar");
-  if (cb) cb.style.width = Math.min(completion,100)+"%";
+  if (cb) { cb.style.width = "0%"; setTimeout(() => { cb.style.width = Math.min(completion,100)+"%"; }, 400); }
   setT("kpi-compl-pct", completion+"%");
 
   // PO progress
@@ -769,9 +801,28 @@ function applySummary(rows) {
   setT("po-remaining", (poQty-incoming).toLocaleString());
   setT("po-completion", completion+"%");
   const pb = document.getElementById("po-bar");
-  if (pb) pb.style.width = Math.min(completion,100)+"%";
+  if (pb) { pb.style.width = "0%"; setTimeout(() => { pb.style.width = Math.min(completion,100)+"%"; }, 300); }
   const pi = document.getElementById("po-inline");
   if (pi) pi.textContent = `${completion}%  ·  ${accepted} / ${poQty.toLocaleString()}`;
+
+  // Update gauge bars
+  // Animate gauge bars with staggered delay
+  function animGauge(id, pct, delay) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.style.width = "0%";
+    setTimeout(() => { el.style.width = Math.min(pct, 100).toFixed(1) + "%"; }, delay);
+  }
+  animGauge("gf-passrate",   passRate,                        200);
+  animGauge("gf-completion", parseFloat(completion),          400);
+  animGauge("gf-accepted",   (accepted/incoming)*100,         600);
+  animGauge("gf-repair",     Math.min((repair/incoming)*100*5, 100), 800);
+  const gvPR = document.getElementById("g-passrate");
+  const gvCP = document.getElementById("g-completion");
+  const gvAC = document.getElementById("g-accepted");
+  if (gvPR) gvPR.textContent = passRate.toFixed(1) + "%";
+  if (gvCP) gvCP.textContent = completion + "%";
+  if (gvAC) gvAC.textContent = accepted + " / " + incoming;
 
   // Summary strip
   setT("ss-total", incoming.toLocaleString());
@@ -781,10 +832,16 @@ function applySummary(rows) {
 
   // Quality bars
   const tot = accepted+repair+rejected;
-  const prA = document.getElementById("pr-acc"); if(prA) prA.style.width=(accepted/tot*100).toFixed(1)+"%";
-  const prR = document.getElementById("pr-rep"); if(prR) prR.style.width=(repair/tot*100).toFixed(1)+"%";
-  const prJ = document.getElementById("pr-rej"); if(prJ) prJ.style.width=(rejected/tot*100).toFixed(1)+"%";
-  setT("pr-acc-v", accepted); setT("pr-rep-v", repair); setT("pr-rej-v", rejected);
+  // Animate progress bars with delay
+  function animBar(id, pct, delay) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.style.width = "0%";
+    setTimeout(() => { el.style.width = pct.toFixed(1) + "%"; }, delay);
+  }
+  animBar("pr-acc", accepted/tot*100, 200);
+  animBar("pr-rep", repair/tot*100,   400);
+  animBar("pr-rej", rejected/tot*100, 600);
 
   // Donut
   if (window._donutChart) {
@@ -1173,7 +1230,14 @@ const sRev = [...stations].reverse();
 window._stationChart = new Chart(document.getElementById("stationChart"), {
   type:"bar",
   data:{ labels:sRev.map(s=>`${s.id}. ${s.name}`), datasets:[{ data:sRev.map(s=>s.pct), backgroundColor:sRev.map(s=>s.pct>=88?"rgba(0,230,118,.55)":s.pct>=50?"rgba(255,202,40,.55)":"rgba(255,71,87,.55)"), borderColor:sRev.map(s=>s.pct>=88?GR:s.pct>=50?AM:RD), borderWidth:1, borderRadius:3 }] },
-  options:{ indexAxis:"y", responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${c.raw.toFixed(2)}%`}}}, scales:{x:{min:0,max:105,ticks:{callback:v=>v+"%",font:{size:9}},grid:{color:"rgba(0,168,255,0.06)"}},y:{grid:{display:false},ticks:{font:{size:8},color:"#4a7090"}}} }
+  options:{ indexAxis:"y", responsive:true, maintainAspectRatio:false,
+    plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${c.raw.toFixed(2)}%`}}},
+    scales:{
+      x:{min:0,max:105,ticks:{callback:v=>v+"%",font:{size:9}},grid:{color:"rgba(0,168,255,0.04)"},border:{display:false}},
+      y:{grid:{display:false},ticks:{font:{size:8},color:"#4a7090"},border:{display:false}}
+    },
+    elements:{bar:{borderRadius:4,borderSkipped:false}}
+  }
 });
 
 // Donut
