@@ -537,7 +537,7 @@ document.addEventListener("DOMContentLoaded", () => {
     </div>
     <div style="display:flex;gap:32px;margin-top:14px;">
       <div><div style="font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--muted);margin-bottom:4px;">PO Quantity</div><div id="po-qty" style="font-size:22px;font-weight:800;color:var(--text);">15,462</div></div>
-      <div><div style="font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--muted);margin-bottom:4px;">Accepted</div><div id="po-accepted" style="font-size:22px;font-weight:800;color:var(--green);">149</div></div>
+      <div><div style="font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--muted);margin-bottom:4px;">Ready for Acceptance</div><div id="po-accepted" style="font-size:22px;font-weight:800;color:var(--green);">149</div></div>
       <div><div style="font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--muted);margin-bottom:4px;">Remaining</div><div id="po-remaining" style="font-size:22px;font-weight:800;color:var(--amber);">15,292</div></div>
       <div><div style="font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--muted);margin-bottom:4px;">Completion</div><div id="po-completion" style="font-size:22px;font-weight:800;color:var(--muted);">0.96%</div></div>
     </div>
@@ -852,8 +852,27 @@ function applySummary(rows) {
 
   // Date
   const hdr = document.getElementById("hdr-date-val");
-  if (hdr) hdr.textContent = reportDate.replace(/\//g," / ");
-  setT("footer-date", reportDate);
+  // Format date — extract DD/MM/YYYY only, ignore any time part
+  const _cleanDate = (str) => {
+    if (!str) return "—";
+    // Format 1: DD/MM/YYYY or DD.MM.YYYY
+    const m1 = str.match(/(\d{1,2})[\/.](\d{1,2})[\/.](\d{4})/);
+    if (m1) return `${m1[1].padStart(2,"0")}/${m1[2].padStart(2,"0")}/${m1[3]}`;
+    // Format 2: YYYY-MM-DD (ISO)
+    const m2 = str.match(/(\d{4})-(\d{2})-(\d{2})/);
+    if (m2) return `${m2[3]}/${m2[2]}/${m2[1]}`;
+    // Format 3: "Mon Mar 16 2026 ..." or "16 Mar 2026"
+    const months = {jan:"01",feb:"02",mar:"03",apr:"04",may:"05",jun:"06",jul:"07",aug:"08",sep:"09",oct:"10",nov:"11",dec:"12"};
+    const m3 = str.match(/(\d{1,2})\s+([a-z]{3})[a-z]*\s+(\d{4})/i);
+    if (m3) { const mo = months[m3[2].toLowerCase().slice(0,3)] || "01"; return `${m3[1].padStart(2,"0")}/${mo}/${m3[3]}`; }
+    const m4 = str.match(/[a-z]{3}\s+([a-z]{3})\s+(\d{1,2})\s+(\d{4})/i);
+    if (m4) { const mo = months[m4[1].toLowerCase().slice(0,3)] || "01"; return `${m4[2].padStart(2,"0")}/${mo}/${m4[3]}`; }
+    // Fallback: return first 10 chars
+    return str.slice(0,10);
+  };
+  const _displayDate = _cleanDate(reportDate);
+  if (hdr) hdr.textContent = _displayDate.replace(/\//g," / ");
+  setT("footer-date", _displayDate);
 
   // ITP Steps — rows starting after header "Seq. N°" (row 16 = index 15)
   let itpStart = -1;
