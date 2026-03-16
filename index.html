@@ -489,7 +489,7 @@ document.addEventListener("DOMContentLoaded", () => {
       </div>
       <div class="kpi-bar"></div>
     </div>
-    <div class="kpi g-green"><div class="kpi-top"><div class="kpi-label">Pipes Accepted</div><div class="kpi-icon">✓</div></div><div class="kpi-val" id="kpi-accepted">149</div><div class="kpi-sub">Overall accepted</div><div class="kpi-bar"></div></div>
+    <div class="kpi g-green"><div class="kpi-top"><div class="kpi-label">Pipes Ready for Acceptance</div><div class="kpi-icon">✓</div></div><div class="kpi-val" id="kpi-accepted">149</div><div class="kpi-sub">Overall</div><div class="kpi-bar"></div></div>
     <div class="kpi g-amber"><div class="kpi-top"><div class="kpi-label">Acceptance Rate</div><div class="kpi-icon">◎</div></div><div class="kpi-val" id="kpi-rate">87.6%</div><div class="kpi-sub" id="kpi-rate-sub">Accepted / Inspected (149/170)</div><div class="kpi-bar"></div></div>
     <div class="kpi g-red"><div class="kpi-top"><div class="kpi-label">Pipes Rejected</div><div class="kpi-icon">✕</div></div><div class="kpi-val" id="kpi-rejected">3</div><div class="kpi-sub">Definitively rejected</div><div class="kpi-bar"></div></div>
   </div>
@@ -504,7 +504,7 @@ document.addEventListener("DOMContentLoaded", () => {
       <div class="gauge-track"><div class="gauge-fill" id="gf-completion" style="background:linear-gradient(90deg,#00a8ff,#00e5c8)"></div></div>
     </div>
     <div class="gauge-card">
-      <div class="gauge-label"><span class="gauge-name">Accepted / Incoming</span><span class="gauge-val" id="g-accepted">149 / 170</span></div>
+      <div class="gauge-label"><span class="gauge-name">Ready for Acceptance / Incoming</span><span class="gauge-val" id="g-accepted">149 / 170</span></div>
       <div class="gauge-track"><div class="gauge-fill" id="gf-accepted" style="background:linear-gradient(90deg,#00e676,#00bfa5)"></div></div>
     </div>
     <div class="gauge-card">
@@ -768,7 +768,8 @@ function applySummary(rows) {
   const rejected = parseInt(kpi["Pipes Rejected"])           || 3;
   const repair   = parseInt(kpi["Repair / Rework"])          || 4;
   const passRate = parseFloat((kpi["Overall Pass Rate (%)"]||"87.65").replace(",",".")) || 87.65;
-  const reportDate = kpi["Report Date"] || "10/03/2026";
+  const _rawRD = (kpi["Report Date"] || "10/03/2026").trim();
+  const reportDate = _rawRD;
   const completion = ((accepted/poQty)*100).toFixed(2);
 
   // KPI cards — always animate
@@ -1341,7 +1342,11 @@ function exportPDF(tableId, title) {
     if (orig && orig.style.display === "none") r.remove();
   });
 
-  const reportDate = document.getElementById("footer-date")?.textContent || new Date().toLocaleDateString();
+  const _rd = document.getElementById("footer-date")?.textContent;
+  const _now = new Date();
+  const _pad = n => String(n).padStart(2,'0');
+  const _today = `${_pad(_now.getDate())}/${_pad(_now.getMonth()+1)}/${_now.getFullYear()}`;
+  const reportDate = (_rd && _rd.trim()) ? _rd.trim() : _today;
 
   const html = `
     <!DOCTYPE html>
@@ -1385,7 +1390,11 @@ function exportPDF(tableId, title) {
 function printReport() {
   const get = id => document.getElementById(id)?.textContent?.trim() || "—";
 
-  const reportDate = get("hdr-date-val").replace(/ \/ /g,"/");
+  const _rawDate = get("hdr-date-val").replace(/ \/ /g,"/");
+  const _now2 = new Date();
+  const _pad2 = n => String(n).padStart(2,'0');
+  const _today2 = `${_pad2(_now2.getDate())}/${_pad2(_now2.getMonth()+1)}/${_now2.getFullYear()}`;
+  const reportDate = (_rawDate && _rawDate !== "—") ? _rawDate : _today2;
   const poQty      = get("po-qty");
   const accepted   = get("po-accepted");
   const rejected   = get("ss-rej");
