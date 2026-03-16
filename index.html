@@ -712,6 +712,9 @@ async function fetchAllData() {
 
   showLiveIndicator(anyOk, results.filter(r => r.status === "rejected").length);
   if (typeof trackSync==="function") trackSync(anyOk);
+  // Update admin badges after all fetches complete
+  updateBadges(window._weldCount || 0, window._finalCount || 0);
+
   const el = document.querySelector(".last-update");
   if (el) {
     const failed = results.filter(r => r.status==="rejected").length;
@@ -838,7 +841,6 @@ function applyDefectsWeld(rows) {
   updateDefectTable(defects, "defectTbody");
   buildDynCharts("weld-charts-grid", defects);
   window._weldCount = defects.length;
-  updateBadges(window._weldCount, window._finalCount || 0);
 }
 
 /* ═══════════════════════════════════════════════════════════════════
@@ -862,7 +864,6 @@ function applyDefectsFinal(rows) {
   updateDefectTable(defects, "finalTbody");
   buildDynCharts("final-charts-grid", defects);
   window._finalCount = defects.length;
-  updateBadges(window._weldCount || 0, window._finalCount);
 }
 
 /* ═══════════════════════════════════════════════════════════════════
