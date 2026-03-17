@@ -1390,7 +1390,7 @@ function exportPDF(tableId, title) {
       <meta charset="UTF-8">
       <title>${title}</title>
       <style>
-        @page { size: A4 landscape; margin: 15mm; }
+        @page { size: A4 portrait; margin: 15mm; }
         body { font-family: Arial, sans-serif; font-size: 10px; color: #111; }
         h2 { font-size: 14px; margin-bottom: 4px; color: #003a6b; }
         p.sub { font-size: 9px; color: #666; margin-bottom: 12px; }
@@ -1547,10 +1547,14 @@ function printReport() {
   const html = `<!DOCTYPE html><html><head><meta charset="UTF-8">
 <title>Sakarya QC Inspection Report — ${reportDate}</title>
 <style>
-  @page{size:A4 landscape;margin:10mm 12mm 12mm 12mm;}
+  @page{size:A4 portrait;margin:12mm 14mm 14mm 14mm;}
+  @page :first{size:A4 portrait;}
+  @page :left{size:A4 portrait !important;}
+  @page :right{size:A4 portrait !important;}
   @media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
     .no-print{display:none!important;} .pb{page-break-before:always;}}
   *{box-sizing:border-box;margin:0;padding:0;}
+  html,body{width:210mm !important;max-width:210mm !important;}
   body{font-family:Arial,sans-serif;font-size:9px;color:#1a1a2e;background:#fff;}
   .page{background:#fff;padding:10mm 12mm;}
   @media print{.page{margin:0;padding:12mm 14mm;}}
@@ -1677,7 +1681,7 @@ function printReport() {
 </div>
 </body></html>`;
 
-  const win = window.open("","_blank","width=960,height=1100");
+  const win = window.open("","_blank","width=820,height=1100");
   win.document.write(html);
   win.document.close();
 }
