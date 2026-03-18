@@ -1926,6 +1926,8 @@ document.querySelectorAll(".tab").forEach(t => {
       if (picker) { picker.value = bg; }
       if (hexLbl) hexLbl.textContent = bg;
       applyBg(bg, s1, s2, el.dataset.light === "1");
+      open = false;
+      panel.style.display = "none";
     });
   });
 
