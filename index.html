@@ -174,7 +174,6 @@ footer{border-top:1px solid var(--border);background:rgba(6,13,26,.95);padding:2
 .tab-badge{display:none;align-items:center;justify-content:center;background:var(--red);color:#fff;font-family:'JetBrains Mono',monospace;font-size:8px;font-weight:700;border-radius:10px;padding:1px 6px;margin-left:6px;min-width:16px;line-height:16px;vertical-align:middle;}
 .admin-visible{display:none;}
 body.admin-mode .admin-visible{display:flex;}
-body.admin-mode .tab-badge{display:inline-flex;}
 .alert-banner{display:none;align-items:center;gap:12px;background:rgba(255,71,87,.08);border:1px solid rgba(255,71,87,.3);border-radius:var(--r);padding:10px 18px;margin-bottom:16px;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--red);animation:fadeIn .3s ease;}
 .alert-banner.show{display:flex;}
 .alert-banner svg{flex-shrink:0;}
@@ -358,7 +357,6 @@ function animateCounter(el, target, isFloat, duration) {
 
 /* ── Update badge counts ─────────────────────────────────────── */
 function updateBadges(weldCount, finalCount) {
-  if (!document.body.classList.contains("admin-mode")) return;
   const bw = document.getElementById("badge-defects");
   const bf = document.getElementById("badge-final");
   if (bw) {
