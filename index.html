@@ -992,6 +992,54 @@ function applySummary(rows) {
    Row 2 = header, rows 3+ = data
    A=Date, B=Shift, C=Pipe, D=Defect, E=Position, F=Extension, G=Remarks
    ═══════════════════════════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════════════════════════
+   CELL CLEANERS — fix Google Sheets date/time export artefacts
+   ═══════════════════════════════════════════════════════════════════ */
+
+// Converts any date string to DD/MM/YYYY
+// Handles: "Wed Feb 11 2026 01:00:00 GMT+0100 (...)", ISO, "DD/MM/YYYY", "MM/DD/YYYY"
+function cleanDate(raw) {
+  if (!raw) return "—";
+  raw = String(raw).trim();
+  // Already DD/MM/YYYY
+  if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(raw)) return raw;
+  // Try native Date parse (works for "Wed Feb 11 2026...", ISO, etc.)
+  const d = new Date(raw);
+  if (!isNaN(d.getTime())) {
+    const dd = String(d.getDate()).padStart(2,"0");
+    const mm = String(d.getMonth()+1).padStart(2,"0");
+    const yyyy = d.getFullYear();
+    return `${dd}/${mm}/${yyyy}`;
+  }
+  return raw; // fallback: return as-is
+}
+
+// Cleans pipe number: if Sheets exported it as a time ("Sun Dec 31 1899 03:39:14...")
+// Sheets auto-converts pipe numbers like "26.4.002095" to dates if column not formatted as text.
+// When it hits "1899" it means Sheets interpreted it as a time-only value (days since 1899-12-30).
+function cleanPipe(raw) {
+  if (!raw) return "—";
+  raw = String(raw).trim();
+  // Already a clean pipe ID (no spaces, only word chars/dots/dashes)
+  if (/^[\w.\-]+$/.test(raw)) return raw;
+  // 1899 artefact: Sheets sent a time-as-date → extract HH:MM:SS and show as-is
+  if (raw.includes("1899")) {
+    // Try to parse as Date and extract HH:MM:SS — that was the original cell value
+    const d = new Date(raw);
+    if (!isNaN(d.getTime())) {
+      // Time-only value: HH hours * 3600 + MM * 60 + SS stored as fraction of a day
+      // Return the raw time string — GAS should fix this by using .toString() on the cell
+      const h = String(d.getHours()).padStart(2,"0");
+      const m2 = String(d.getMinutes()).padStart(2,"0");
+      const s = String(d.getSeconds()).padStart(2,"0");
+      return `${h}:${m2}:${s} (⚠ check GAS)`;
+    }
+  }
+  // Generic long string: strip timezone noise and truncate
+  const clean = raw.replace(/\s*\([^)]*\)/g,"").replace(/GMT[+\-]\d{4}/g,"").trim();
+  return clean.length > 25 ? clean.substring(0, 25) + "…" : clean;
+}
+
 function applyDefectsWeld(rows) {
   // Find header row (contains "Date" in col A)
   let dataStart = -1;
@@ -1006,7 +1054,7 @@ function applyDefectsWeld(rows) {
     const r = rows[i];
     if (!r[0] && !r[2]) continue;  // skip empty rows, don't break
     if (!r[0] || !r[2]) continue;  // skip incomplete rows
-    defects.push({ date:r[0].trim(), shift:r[1]||"", pipe:r[2].trim(), defect:r[3]||"", pos:parseInt(r[4])||0, ext:parseInt(r[5])||0, remarks:r[6]||"" });
+    defects.push({ date:cleanDate(r[0]), shift:r[1]||"", pipe:cleanPipe(r[2]), defect:r[3]||"", pos:parseInt(r[4])||0, ext:parseInt(r[5])||0, remarks:r[6]||"" });
   }
 
   updateDefectTable(defects, "defectTbody");
@@ -1030,7 +1078,7 @@ function applyDefectsFinal(rows) {
     const r = rows[i];
     if (!r[0] && !r[2]) continue;  // skip empty rows
     if (!r[0] || !r[2]) continue;  // skip incomplete rows
-    defects.push({ date:r[0].trim(), shift:r[1]||"", pipe:r[2].trim(), defect:r[3]||"", pos:parseInt(r[4])||0, ext:parseInt(r[5])||0, remarks:r[6]||"" });
+    defects.push({ date:cleanDate(r[0]), shift:r[1]||"", pipe:cleanPipe(r[2]), defect:r[3]||"", pos:parseInt(r[4])||0, ext:parseInt(r[5])||0, remarks:r[6]||"" });
   }
 
   updateDefectTable(defects, "finalTbody");
