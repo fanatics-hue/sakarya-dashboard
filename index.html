@@ -883,25 +883,23 @@ async function fetchAllData() {
    SUMMARY — KPI + ITP Steps (from SUMMARY tab, rows 5-40)
    ═══════════════════════════════════════════════════════════════════ */
 function applySummary(d) {
-  // d = JSON from GAS: {insp, rel, pend, poQty, poBal, voestPct, voestNos, ts}
+  // d = JSON from GAS v3: {poQty, insp, rel, rejected, repair, passRate, completion, reportDate, ts}
   console.log("[SUMMARY] GAS data:", JSON.stringify(d));
 
-  const incoming  = Number(d.insp)     || 0;
-  const accepted  = Number(d.rel)      || 0;
-  const pending   = Number(d.pend)     || 0;
-  const poQty     = Number(d.poQty)    || 0;
-  const poBal     = Number(d.poBal)    || 0;
-  const voestPct  = Number(d.voestPct) || 0;
-  const voestNos  = Number(d.voestNos) || 0;
-  const rejected  = Math.max(0, incoming - accepted - pending);
-  const repair    = 0;
-  const passRate  = incoming > 0 ? parseFloat(((accepted/incoming)*100).toFixed(2)) : 0;
-  const completion = poQty > 0 ? parseFloat(((accepted/poQty)*100).toFixed(2)) : 0;
+  const poQty      = Number(d.poQty)      || 0;
+  const incoming   = Number(d.insp)       || 0;
+  const accepted   = Number(d.rel)        || 0;
+  const rejected   = Number(d.rejected)   || 0;
+  const repair     = Number(d.repair)     || 0;
+  const passRate   = Number(d.passRate)   || 0;
+  const completion = Number(d.completion) * (d.completion < 2 ? 100 : 1); // handle 0.96 or 96
+  const compFmt    = parseFloat(completion.toFixed(2));
 
-  // Date from GAS timestamp
-  const _ts = d.ts ? new Date(d.ts) : new Date();
-  const _pad = n => String(n).padStart(2,"0");
-  const _displayDate = `${_pad(_ts.getDate())}/${_pad(_ts.getMonth()+1)}/${_ts.getFullYear()}`;
+  // Report date — use GAS value directly (already DD/MM/YYYY)
+  const _displayDate = d.reportDate || (() => {
+    const n = new Date(); const p = x => String(x).padStart(2,"0");
+    return `${p(n.getDate())}/${p(n.getMonth()+1)}/${n.getFullYear()}`;
+  })();
 
   // KPI cards
   animateCounter(document.getElementById("kpi-po"),       poQty,    false, 1200);
@@ -925,47 +923,39 @@ function applySummary(d) {
   const incEl = document.getElementById("kpi-incoming");
   if (incEl) incEl.textContent = `${incoming.toLocaleString()} Incoming Plates`;
 
-  // Optional elements
-  const pendEl = document.getElementById("kpi-pending");
-  if (pendEl) animateCounter(pendEl, pending, false, 800);
-  const vpEl = document.getElementById("kpi-voest-pct");
-  if (vpEl) animateCounter(vpEl, voestPct, true, 900);
-  const vnEl = document.getElementById("kpi-voest-nos");
-  if (vnEl) animateCounter(vnEl, voestNos, false, 900);
-
   // Completion bar
   const cb = document.getElementById("kpi-compl-bar");
-  if (cb) { cb.style.width="0%"; setTimeout(()=>{ cb.style.width=Math.min(completion,100)+"%"; },400); }
-  setT("kpi-compl-pct", completion+"%");
+  if (cb) { cb.style.width="0%"; setTimeout(()=>{ cb.style.width=Math.min(compFmt,100)+"%"; },400); }
+  setT("kpi-compl-pct", compFmt+"%");
 
   // PO progress
   setT("po-qty",        poQty.toLocaleString());
   setT("po-accepted",   accepted.toLocaleString());
-  setT("po-remaining",  (poBal > 0 ? poBal : poQty-incoming).toLocaleString());
-  setT("po-completion", completion+"%");
+  setT("po-remaining",  (poQty - incoming).toLocaleString());
+  setT("po-completion", compFmt+"%");
   const pb = document.getElementById("po-bar");
-  if (pb) { pb.style.width="0%"; setTimeout(()=>{ pb.style.width=Math.min(completion,100)+"%"; },300); }
+  if (pb) { pb.style.width="0%"; setTimeout(()=>{ pb.style.width=Math.min(compFmt,100)+"%"; },300); }
   const pi = document.getElementById("po-inline");
-  if (pi) pi.textContent = `${completion}%  ·  ${accepted} / ${poQty.toLocaleString()}`;
+  if (pi) pi.textContent = `${compFmt}%  ·  ${accepted} / ${poQty.toLocaleString()}`;
 
   // Gauge bars
   function animGauge(id, pct, delay) {
     const el = document.getElementById(id); if (!el) return;
     el.style.width="0%"; setTimeout(()=>{ el.style.width=Math.min(pct,100).toFixed(1)+"%"; },delay);
   }
-  animGauge("gf-passrate",   passRate,   200);
-  animGauge("gf-completion", completion, 400);
+  animGauge("gf-passrate",   passRate, 200);
+  animGauge("gf-completion", compFmt,  400);
   animGauge("gf-accepted",   incoming>0?(accepted/incoming)*100:0, 600);
   animGauge("gf-repair",     incoming>0?Math.min((repair/incoming)*100*5,100):0, 800);
-  const gvPR=document.getElementById("g-passrate");
-  const gvCP=document.getElementById("g-completion");
-  const gvAC=document.getElementById("g-accepted");
+  const gvPR = document.getElementById("g-passrate");
+  const gvCP = document.getElementById("g-completion");
+  const gvAC = document.getElementById("g-accepted");
   if (gvPR) gvPR.textContent = passRate.toFixed(1)+"%";
-  if (gvCP) gvCP.textContent = completion+"%";
+  if (gvCP) gvCP.textContent = compFmt+"%";
   if (gvAC) gvAC.textContent = accepted+" / "+incoming;
 
   // Quality bars
-  const tot = accepted+repair+rejected;
+  const tot = accepted + repair + rejected;
   function animBar(id, pct, delay) {
     const el = document.getElementById(id); if (!el) return;
     el.style.width="0%"; setTimeout(()=>{ el.style.width=pct.toFixed(1)+"%"; },delay);
@@ -987,8 +977,8 @@ function applySummary(d) {
   if (hdr) hdr.textContent = _displayDate.replace(/\//g," / ");
   setT("footer-date", _displayDate);
 
-  // Snapshot for printReport — avoids animateCounter race
-  window._reportData = { poQty, incoming, accepted, rejected, repair, passRate, completion, reportDate: _displayDate };
+  // Snapshot for printReport
+  window._reportData = { poQty, incoming, accepted, rejected, repair, passRate, completion: compFmt, reportDate: _displayDate };
 }
 
 /* ═══════════════════════════════════════════════════════════════════
