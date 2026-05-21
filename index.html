@@ -777,8 +777,14 @@ async function fetchJSON(url) {
     const res = await fetch(url, {signal: ctrl.signal});
     clearTimeout(timer);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const text = await res.text();
+    let text = await res.text();
     if (!text || text.length < 5) throw new Error("Empty response from GAS");
+    // Strip any XSS-protection prefix that Google may prepend (e.g. ")]}'" or similar)
+    const jsonStart = text.indexOf("{");
+    const jsonEnd   = text.lastIndexOf("}");
+    if (jsonStart < 0 || jsonEnd < 0) throw new Error("No JSON object found in response");
+    text = text.slice(jsonStart, jsonEnd + 1);
+    console.log("[SUMMARY] Raw text (cleaned):", text.slice(0, 200));
     const data = JSON.parse(text);
     if (data.error) throw new Error("GAS error: " + data.error);
     return data;
