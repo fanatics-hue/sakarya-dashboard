@@ -985,6 +985,12 @@ function applySummary(rows) {
     }
     if (live.length > 0) updateStationCharts(live);
   }
+
+  // ── Store snapshot for printReport (avoids animateCounter race) ──
+  window._reportData = {
+    poQty, incoming, accepted, rejected, repair,
+    passRate, completion, reportDate: _displayDate
+  };
 }
 
 /* ═══════════════════════════════════════════════════════════════════
@@ -1380,16 +1386,7 @@ document.addEventListener("DOMContentLoaded", () => {
   fetchAllData();
   setInterval(fetchAllData, REFRESH_MS);
   const pb = document.getElementById("admin-print-btn");
-  if (pb) pb.addEventListener("click", async () => {
-    pb.style.opacity = "0.5";
-    pb.style.pointerEvents = "none";
-    try {
-      await printReport();
-    } finally {
-      pb.style.opacity = "1";
-      pb.style.pointerEvents = "auto";
-    }
-  });
+  if (pb) pb.addEventListener("click", printReport);
 });
 
 /* ═══════════════════════════════════════════════════════════════════
@@ -1655,45 +1652,22 @@ function exportPDF(tableId, title) {
 /* ═══════════════════════════════════════════════════════════════════
    ADMIN — PRINT INSPECTION REPORT
    ═══════════════════════════════════════════════════════════════════ */
-async function printReport() {
-  // 🔄 REFRESH DATI FRESCHI: Carica i dati più recenti da Google Sheets PRIMA di stampare
-  // Questo assicura che il rapporto contenga sempre i valori attuali
-  try {
-    console.log("🔄 Refreshing data before print...");
-    const refreshCtrl = new AbortController();
-    const refreshTimer = setTimeout(() => refreshCtrl.abort(), 10000);
-    
-    // Carica i dati freschi da tutti e 3 i fogli in parallelo (no-cache)
-    await Promise.all([
-      fetch(URLS.summary, {signal: refreshCtrl.signal, cache: 'no-store'}),
-      fetch(URLS.defectsWeld, {signal: refreshCtrl.signal, cache: 'no-store'}),
-      fetch(URLS.defectsFinal, {signal: refreshCtrl.signal, cache: 'no-store'})
-    ]);
-    
-    clearTimeout(refreshTimer);
-    console.log("✅ Data refreshed successfully");
-  } catch(err) {
-    console.warn("⚠️ Refresh fallback (using cached data):", err.message);
-    // Continua comunque con i dati in cache se il refresh fallisce
-  }
-  
-  // Attendi il rendering del DOM prima di procedere
-  await new Promise(resolve => setTimeout(resolve, 100));
-  
-  const get = id => document.getElementById(id)?.textContent?.trim() || "—";
-
-  const _rawDate = get("hdr-date-val").replace(/ \/ /g,"/");
+function printReport() {
+  // Use _reportData snapshot (populated by applySummary) to avoid
+  // animateCounter() race condition — values are always up-to-date
+  const _d = window._reportData || {};
   const _now2 = new Date();
-  const _pad2 = n => String(n).padStart(2,'0');
+  const _pad2 = n => String(n).padStart(2,"0");
   const _today2 = `${_pad2(_now2.getDate())}/${_pad2(_now2.getMonth()+1)}/${_now2.getFullYear()}`;
-  const reportDate = (_rawDate && _rawDate !== "—") ? _rawDate : _today2;
-  const poQty      = get("po-qty");
-  const accepted   = get("po-accepted");
-  const rejected   = get("ss-rej");
-  const repair     = get("ss-rep");
-  const incoming   = get("ss-total");
-  const passRate   = get("kpi-rate");
-  const completion = get("po-completion");
+
+  const reportDate = _d.reportDate || document.getElementById("hdr-date-val")?.textContent?.replace(/ \/ /g,"/") || _today2;
+  const poQty      = _d.poQty      != null ? _d.poQty.toLocaleString()        : (document.getElementById("po-qty")?.textContent?.trim() || "—");
+  const accepted   = _d.accepted   != null ? _d.accepted.toLocaleString()     : (document.getElementById("po-accepted")?.textContent?.trim() || "—");
+  const rejected   = _d.rejected   != null ? String(_d.rejected)              : (document.getElementById("ss-rej")?.textContent?.trim() || "—");
+  const repair     = _d.repair     != null ? String(_d.repair)                : (document.getElementById("ss-rep")?.textContent?.trim() || "—");
+  const incoming   = _d.incoming   != null ? _d.incoming.toLocaleString()     : (document.getElementById("ss-total")?.textContent?.trim() || "—");
+  const passRate   = _d.passRate   != null ? _d.passRate.toFixed(2) + "%"     : (document.getElementById("kpi-rate")?.textContent?.trim() || "—");
+  const completion = _d.completion != null ? _d.completion + "%"              : (document.getElementById("po-completion")?.textContent?.trim() || "—");
   const logoSrc    = document.querySelector(".login-logo img")?.src || "";
 
   // Welding defects
