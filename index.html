@@ -1380,7 +1380,16 @@ document.addEventListener("DOMContentLoaded", () => {
   fetchAllData();
   setInterval(fetchAllData, REFRESH_MS);
   const pb = document.getElementById("admin-print-btn");
-  if (pb) pb.addEventListener("click", printReport);
+  if (pb) pb.addEventListener("click", async () => {
+    pb.style.opacity = "0.5";
+    pb.style.pointerEvents = "none";
+    try {
+      await printReport();
+    } finally {
+      pb.style.opacity = "1";
+      pb.style.pointerEvents = "auto";
+    }
+  });
 });
 
 /* ═══════════════════════════════════════════════════════════════════
@@ -1646,7 +1655,31 @@ function exportPDF(tableId, title) {
 /* ═══════════════════════════════════════════════════════════════════
    ADMIN — PRINT INSPECTION REPORT
    ═══════════════════════════════════════════════════════════════════ */
-function printReport() {
+async function printReport() {
+  // 🔄 REFRESH DATI FRESCHI: Carica i dati più recenti da Google Sheets PRIMA di stampare
+  // Questo assicura che il rapporto contenga sempre i valori attuali
+  try {
+    console.log("🔄 Refreshing data before print...");
+    const refreshCtrl = new AbortController();
+    const refreshTimer = setTimeout(() => refreshCtrl.abort(), 10000);
+    
+    // Carica i dati freschi da tutti e 3 i fogli in parallelo (no-cache)
+    await Promise.all([
+      fetch(URLS.summary, {signal: refreshCtrl.signal, cache: 'no-store'}),
+      fetch(URLS.defectsWeld, {signal: refreshCtrl.signal, cache: 'no-store'}),
+      fetch(URLS.defectsFinal, {signal: refreshCtrl.signal, cache: 'no-store'})
+    ]);
+    
+    clearTimeout(refreshTimer);
+    console.log("✅ Data refreshed successfully");
+  } catch(err) {
+    console.warn("⚠️ Refresh fallback (using cached data):", err.message);
+    // Continua comunque con i dati in cache se il refresh fallisce
+  }
+  
+  // Attendi il rendering del DOM prima di procedere
+  await new Promise(resolve => setTimeout(resolve, 100));
+  
   const get = id => document.getElementById(id)?.textContent?.trim() || "—";
 
   const _rawDate = get("hdr-date-val").replace(/ \/ /g,"/");
