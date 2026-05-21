@@ -769,7 +769,27 @@ function parseCSV(text) {
   return rows;
 }
 
-/* ── Fetch via Google Apps Script (no CORS) ─────────────────────── */
+/* ── Fetch JSON — used for summary KPI endpoint ─────────────────── */
+async function fetchJSON(url) {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 15000);
+  try {
+    const res = await fetch(url, {signal: ctrl.signal});
+    clearTimeout(timer);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const text = await res.text();
+    if (!text || text.length < 5) throw new Error("Empty response from GAS");
+    const data = JSON.parse(text);
+    if (data.error) throw new Error("GAS error: " + data.error);
+    return data;
+  } catch(e) {
+    clearTimeout(timer);
+    if (e.name === "AbortError") throw new Error("Timeout (15s)");
+    throw e;
+  }
+}
+
+/* ── Fetch CSV — used for defects sheets ────────────────────────── */
 async function fetchCSV(url) {
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), 15000);
@@ -779,6 +799,11 @@ async function fetchCSV(url) {
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const text = await res.text();
     if (!text || text.length < 5) throw new Error("Empty response from GAS");
+    // If response is JSON (error object), throw it
+    if (text.trim().startsWith("{")) {
+      const j = JSON.parse(text);
+      if (j.error) throw new Error("GAS: " + j.error);
+    }
     return parseCSV(text);
   } catch(e) {
     clearTimeout(timer);
@@ -790,9 +815,9 @@ async function fetchCSV(url) {
 /* ── Main fetch — all 3 sheets in parallel ────────────────────────── */
 async function fetchAllData() {
   const results = await Promise.allSettled([
-    fetchCSV(URLS.summary),
-    fetchCSV(URLS.defectsWeld),
-    fetchCSV(URLS.defectsFinal),
+    fetchJSON(GAS_URL),          // summary KPI — returns JSON object
+    fetchCSV(URLS.defectsWeld),  // weld defects — returns CSV rows
+    fetchCSV(URLS.defectsFinal), // final defects — returns CSV rows
   ]);
 
   const [sumRes, weldRes, finalRes] = results;
@@ -850,92 +875,99 @@ async function fetchAllData() {
 /* ═══════════════════════════════════════════════════════════════════
    SUMMARY — KPI + ITP Steps (from SUMMARY tab, rows 5-40)
    ═══════════════════════════════════════════════════════════════════ */
-function applySummary(rows) {
-  // Build key→value map for KPI rows (col A = key, col B = value)
-  const kpi = {};
-  rows.forEach(r => { if(r[0]) kpi[r[0].replace(/\uFEFF/g,"").trim()] = (r[1]||"").trim(); });
+function applySummary(d) {
+  // d = JSON from GAS: {insp, rel, pend, poQty, poBal, voestPct, voestNos, ts}
+  console.log("[SUMMARY] GAS data:", JSON.stringify(d));
 
-  const poQty    = parseInt(kpi["Purchase Order (PO) Qty"]) || 15462;
-  const incoming = parseInt(kpi["Incoming Plates"])          || 170;
-  const accepted = parseInt(kpi["Pipes Accepted"])           || 149;
-  const rejected = parseInt(kpi["Pipes Rejected"])           || 3;
-  const repair   = parseInt(kpi["Repair / Rework"])          || 4;
-  const passRate = parseFloat((kpi["Overall Pass Rate (%)"]||"87.65").replace(",",".")) || 87.65;
-  const _rawRD = (kpi["Report Date"] || "10/03/2026").trim();
-  const reportDate = _rawRD;
-  const completion = ((accepted/poQty)*100).toFixed(2);
+  const incoming  = Number(d.insp)     || 0;
+  const accepted  = Number(d.rel)      || 0;
+  const pending   = Number(d.pend)     || 0;
+  const poQty     = Number(d.poQty)    || 0;
+  const poBal     = Number(d.poBal)    || 0;
+  const voestPct  = Number(d.voestPct) || 0;
+  const voestNos  = Number(d.voestNos) || 0;
+  const rejected  = Math.max(0, incoming - accepted - pending);
+  const repair    = 0;
+  const passRate  = incoming > 0 ? parseFloat(((accepted/incoming)*100).toFixed(2)) : 0;
+  const completion = poQty > 0 ? parseFloat(((accepted/poQty)*100).toFixed(2)) : 0;
 
-  // KPI cards — always animate
-  animateCounter(document.getElementById("kpi-po"),       poQty,     false, 1200);
-  animateCounter(document.getElementById("kpi-accepted"), accepted,  false, 900);
-  animateCounter(document.getElementById("kpi-rate"),     passRate,  true,  1000);
-  animateCounter(document.getElementById("kpi-rejected"), rejected,  false, 700);
-  // Strip numbers
-  animateCounter(document.getElementById("ss-total"),     incoming,  false, 900);
-  animateCounter(document.getElementById("ss-acc"),       accepted,  false, 900);
-  animateCounter(document.getElementById("ss-rep"),       repair,    false, 700);
-  animateCounter(document.getElementById("ss-rej"),       rejected,  false, 700);
-  // Progress bar values
-  animateCounter(document.getElementById("pr-acc-v"),     accepted,  false, 900);
-  animateCounter(document.getElementById("pr-rep-v"),     repair,    false, 700);
-  animateCounter(document.getElementById("pr-rej-v"),     rejected,  false, 700);
+  // Date from GAS timestamp
+  const _ts = d.ts ? new Date(d.ts) : new Date();
+  const _pad = n => String(n).padStart(2,"0");
+  const _displayDate = `${_pad(_ts.getDate())}/${_pad(_ts.getMonth()+1)}/${_ts.getFullYear()}`;
+
+  // KPI cards
+  animateCounter(document.getElementById("kpi-po"),       poQty,    false, 1200);
+  animateCounter(document.getElementById("kpi-accepted"), accepted, false, 900);
+  animateCounter(document.getElementById("kpi-rate"),     passRate, true,  1000);
+  animateCounter(document.getElementById("kpi-rejected"), rejected, false, 700);
+
+  // Summary strip
+  animateCounter(document.getElementById("ss-total"), incoming, false, 900);
+  animateCounter(document.getElementById("ss-acc"),   accepted, false, 900);
+  animateCounter(document.getElementById("ss-rep"),   repair,   false, 700);
+  animateCounter(document.getElementById("ss-rej"),   rejected, false, 700);
+
+  // Progress bar labels
+  animateCounter(document.getElementById("pr-acc-v"), accepted, false, 900);
+  animateCounter(document.getElementById("pr-rep-v"), repair,   false, 700);
+  animateCounter(document.getElementById("pr-rej-v"), rejected, false, 700);
+
   checkPassRateAlert(passRate);
   setT("kpi-rate-sub", `Ready for Acceptance / Inspected (${accepted}/${incoming})`);
-  const inc = document.getElementById("kpi-incoming");
-  if (inc) inc.textContent = `${incoming.toLocaleString()} Incoming Plates`;
+  const incEl = document.getElementById("kpi-incoming");
+  if (incEl) incEl.textContent = `${incoming.toLocaleString()} Incoming Plates`;
+
+  // Optional elements
+  const pendEl = document.getElementById("kpi-pending");
+  if (pendEl) animateCounter(pendEl, pending, false, 800);
+  const vpEl = document.getElementById("kpi-voest-pct");
+  if (vpEl) animateCounter(vpEl, voestPct, true, 900);
+  const vnEl = document.getElementById("kpi-voest-nos");
+  if (vnEl) animateCounter(vnEl, voestNos, false, 900);
 
   // Completion bar
   const cb = document.getElementById("kpi-compl-bar");
-  if (cb) { cb.style.width = "0%"; setTimeout(() => { cb.style.width = Math.min(completion,100)+"%"; }, 400); }
+  if (cb) { cb.style.width="0%"; setTimeout(()=>{ cb.style.width=Math.min(completion,100)+"%"; },400); }
   setT("kpi-compl-pct", completion+"%");
 
   // PO progress
-  setT("po-qty", poQty.toLocaleString());
-  setT("po-accepted", accepted.toLocaleString());
-  setT("po-remaining", (poQty-incoming).toLocaleString());
+  setT("po-qty",        poQty.toLocaleString());
+  setT("po-accepted",   accepted.toLocaleString());
+  setT("po-remaining",  (poBal > 0 ? poBal : poQty-incoming).toLocaleString());
   setT("po-completion", completion+"%");
   const pb = document.getElementById("po-bar");
-  if (pb) { pb.style.width = "0%"; setTimeout(() => { pb.style.width = Math.min(completion,100)+"%"; }, 300); }
+  if (pb) { pb.style.width="0%"; setTimeout(()=>{ pb.style.width=Math.min(completion,100)+"%"; },300); }
   const pi = document.getElementById("po-inline");
   if (pi) pi.textContent = `${completion}%  ·  ${accepted} / ${poQty.toLocaleString()}`;
 
-  // Update gauge bars
-  // Animate gauge bars with staggered delay
+  // Gauge bars
   function animGauge(id, pct, delay) {
-    const el = document.getElementById(id);
-    if (!el) return;
-    el.style.width = "0%";
-    setTimeout(() => { el.style.width = Math.min(pct, 100).toFixed(1) + "%"; }, delay);
+    const el = document.getElementById(id); if (!el) return;
+    el.style.width="0%"; setTimeout(()=>{ el.style.width=Math.min(pct,100).toFixed(1)+"%"; },delay);
   }
-  animGauge("gf-passrate",   passRate,                        200);
-  animGauge("gf-completion", parseFloat(completion),          400);
-  animGauge("gf-accepted",   (accepted/incoming)*100,         600);
-  animGauge("gf-repair",     Math.min((repair/incoming)*100*5, 100), 800);
-  const gvPR = document.getElementById("g-passrate");
-  const gvCP = document.getElementById("g-completion");
-  const gvAC = document.getElementById("g-accepted");
-  if (gvPR) gvPR.textContent = passRate.toFixed(1) + "%";
-  if (gvCP) gvCP.textContent = completion + "%";
-  if (gvAC) gvAC.textContent = accepted + " / " + incoming;
-
-  // Summary strip
-  setT("ss-total", incoming.toLocaleString());
-  setT("ss-acc", accepted.toLocaleString());
-  setT("ss-rep", repair.toLocaleString());
-  setT("ss-rej", rejected.toLocaleString());
+  animGauge("gf-passrate",   passRate,   200);
+  animGauge("gf-completion", completion, 400);
+  animGauge("gf-accepted",   incoming>0?(accepted/incoming)*100:0, 600);
+  animGauge("gf-repair",     incoming>0?Math.min((repair/incoming)*100*5,100):0, 800);
+  const gvPR=document.getElementById("g-passrate");
+  const gvCP=document.getElementById("g-completion");
+  const gvAC=document.getElementById("g-accepted");
+  if (gvPR) gvPR.textContent = passRate.toFixed(1)+"%";
+  if (gvCP) gvCP.textContent = completion+"%";
+  if (gvAC) gvAC.textContent = accepted+" / "+incoming;
 
   // Quality bars
   const tot = accepted+repair+rejected;
-  // Animate progress bars with delay
   function animBar(id, pct, delay) {
-    const el = document.getElementById(id);
-    if (!el) return;
-    el.style.width = "0%";
-    setTimeout(() => { el.style.width = pct.toFixed(1) + "%"; }, delay);
+    const el = document.getElementById(id); if (!el) return;
+    el.style.width="0%"; setTimeout(()=>{ el.style.width=pct.toFixed(1)+"%"; },delay);
   }
-  animBar("pr-acc", accepted/tot*100, 200);
-  animBar("pr-rep", repair/tot*100,   400);
-  animBar("pr-rej", rejected/tot*100, 600);
+  if (tot > 0) {
+    animBar("pr-acc", accepted/tot*100, 200);
+    animBar("pr-rep", repair/tot*100,   400);
+    animBar("pr-rej", rejected/tot*100, 600);
+  }
 
   // Donut
   if (window._donutChart) {
@@ -943,48 +975,13 @@ function applySummary(rows) {
     window._donutChart.update("none");
   }
 
-  // Date
+  // Date header
   const hdr = document.getElementById("hdr-date-val");
-  // Format date — extract DD/MM/YYYY only, ignore any time part
-  const _cleanDate = (str) => {
-    if (!str) return "—";
-    // Format 1: DD/MM/YYYY or DD.MM.YYYY
-    const m1 = str.match(/(\d{1,2})[\/.](\d{1,2})[\/.](\d{4})/);
-    if (m1) return `${m1[1].padStart(2,"0")}/${m1[2].padStart(2,"0")}/${m1[3]}`;
-    // Format 2: YYYY-MM-DD (ISO)
-    const m2 = str.match(/(\d{4})-(\d{2})-(\d{2})/);
-    if (m2) return `${m2[3]}/${m2[2]}/${m2[1]}`;
-    // Format 3: "Mon Mar 16 2026 ..." or "16 Mar 2026"
-    const months = {jan:"01",feb:"02",mar:"03",apr:"04",may:"05",jun:"06",jul:"07",aug:"08",sep:"09",oct:"10",nov:"11",dec:"12"};
-    const m3 = str.match(/(\d{1,2})\s+([a-z]{3})[a-z]*\s+(\d{4})/i);
-    if (m3) { const mo = months[m3[2].toLowerCase().slice(0,3)] || "01"; return `${m3[1].padStart(2,"0")}/${mo}/${m3[3]}`; }
-    const m4 = str.match(/[a-z]{3}\s+([a-z]{3})\s+(\d{1,2})\s+(\d{4})/i);
-    if (m4) { const mo = months[m4[1].toLowerCase().slice(0,3)] || "01"; return `${m4[2].padStart(2,"0")}/${mo}/${m4[3]}`; }
-    // Fallback: return first 10 chars
-    return str.slice(0,10);
-  };
-  const _displayDate = _cleanDate(reportDate);
   if (hdr) hdr.textContent = _displayDate.replace(/\//g," / ");
   setT("footer-date", _displayDate);
 
-  // ITP Steps — rows starting after header "Seq. N°" (row 16 = index 15)
-  let itpStart = -1;
-  rows.forEach((r,i) => { if(r[0] && r[0].toString().includes("Seq")) itpStart = i+1; });
-  if (itpStart > 0) {
-    const live = [];
-    for (let i=itpStart; i<rows.length; i++) {
-      const r = rows[i];
-      const id = parseInt(r[0]);
-      if (!id || isNaN(id)) continue;
-      live.push({
-        id, name:r[1]||"", group:r[2]||"",
-        n: parseInt(r[3])||0,
-        pct: parseFloat((r[4]||"0").replace(",","."))||0,
-        remarks: r[7]||""
-      });
-    }
-    if (live.length > 0) updateStationCharts(live);
-  }
+  // Snapshot for printReport — avoids animateCounter race
+  window._reportData = { poQty, incoming, accepted, rejected, repair, passRate, completion, reportDate: _displayDate };
 }
 
 /* ═══════════════════════════════════════════════════════════════════
