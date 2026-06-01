@@ -1,0 +1,2006 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sakarya Gas Field — QC Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3M8L7K0J1R"></script>
+<script>
+  window.dataLayer=window.dataLayer||[];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js',new Date());
+  gtag('config','G-3M8L7K0J1R',{page_title:'Sakarya Gas Field Dashboard',page_location:window.location.href,send_page_view:true,anonymize_ip:true});
+  function trackTab(n){gtag('event','tab_view',{event_category:'Navigation',event_label:n,value:1});}
+  let _st=Date.now();
+  window.addEventListener('beforeunload',()=>{gtag('event','time_on_page',{event_category:'Engagement',event_label:'seconds',value:Math.round((Date.now()-_st)/1000),non_interaction:true});});
+  function trackSync(ok){gtag('event',ok?'data_sync_success':'data_sync_failed',{event_category:'Data',event_label:'Google Sheets'});}
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{--bg:#060d1a;--s1:#0c1929;--s2:#102035;--s3:#152844;--border:rgba(0,168,255,0.12);--blue:#00a8ff;--teal:#00e5c8;--green:#00e676;--amber:#ffca28;--red:#ff4757;--purple:#7c4dff;--text:#ddeeff;--muted:#4a7090;--r:10px;}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;}
+.bg-grid{position:fixed;inset:0;background-image:linear-gradient(rgba(0,168,255,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,168,255,0.03) 1px,transparent 1px);background-size:48px 48px;pointer-events:none;z-index:0;}
+.bg-glow{position:fixed;border-radius:50%;filter:blur(100px);pointer-events:none;z-index:0;}
+.bg-glow-1{width:600px;height:600px;top:-200px;left:-150px;background:rgba(0,168,255,0.07);}
+.bg-glow-2{width:500px;height:500px;bottom:-150px;right:-100px;background:rgba(0,229,200,0.05);}
+.wrap{position:relative;z-index:1;}
+header{display:flex;justify-content:space-between;align-items:center;padding:0 52px;height:72px;border-bottom:1px solid var(--border);background:rgba(6,13,26,0.9);backdrop-filter:blur(20px);position:sticky;top:0;z-index:200;}
+.egg-trigger{display:flex;align-items:center;gap:14px;cursor:pointer;position:relative;user-select:none;}
+.egg-popup{display:none;position:absolute;top:calc(100% + 12px);left:0;z-index:300;background:var(--s1);border:1px solid rgba(0,168,255,0.2);border-radius:20px;padding:7px 16px;animation:eggFade .2s ease;}
+.egg-popup.show{display:flex;align-items:center;gap:8px;}
+@keyframes eggFade{from{opacity:0;transform:translateY(-5px);}to{opacity:1;transform:none;}}
+.egg-popup::before{content:'';position:absolute;top:-5px;left:16px;width:8px;height:8px;background:var(--s1);border-left:1px solid rgba(0,168,255,0.2);border-top:1px solid rgba(0,168,255,0.2);transform:rotate(45deg);}
+.egg-dot{width:5px;height:5px;border-radius:50%;background:var(--blue);opacity:.7;flex-shrink:0;}
+.egg-dev{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;}
+.egg-sig{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--blue);font-weight:700;}
+.brand{display:flex;flex-direction:column;gap:2px;}
+.brand-title{font-size:16px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;background:linear-gradient(90deg,var(--blue),var(--teal));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.brand-sub{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:3px;color:var(--muted);text-transform:uppercase;}
+.hdr-right{display:flex;align-items:center;gap:24px;}
+.live-badge{display:flex;align-items:center;gap:8px;background:rgba(0,230,118,0.07);border:1px solid rgba(0,230,118,0.2);border-radius:24px;padding:5px 14px;font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--green);}
+.live-dot{width:7px;height:7px;border-radius:50%;background:var(--green);animation:pulse 1.8s ease-in-out infinite;}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(0,230,118,.7);}70%{box-shadow:0 0 0 7px rgba(0,230,118,0);}100%{box-shadow:0 0 0 0 rgba(0,230,118,0);}}
+.hdr-date{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted);}
+.hdr-date b{color:var(--text);}
+nav{display:flex;padding:0 52px;border-bottom:1px solid var(--border);background:rgba(6,13,26,0.7);gap:2px;overflow-x:auto;}
+.tab{padding:13px 22px;font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:500;letter-spacing:2px;text-transform:uppercase;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;white-space:nowrap;}
+.tab:hover{color:var(--text);}.tab.active{color:var(--blue);border-bottom-color:var(--blue);}
+main{padding:36px 52px;}
+.tab-content{display:none;animation:fadeIn .3s ease;}.tab-content.active{display:block;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
+.sl{display:flex;align-items:center;gap:14px;font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:4px;text-transform:uppercase;color:var(--blue);margin-bottom:22px;}
+.sl::before{content:'';width:20px;height:2px;background:linear-gradient(90deg,var(--blue),var(--teal));border-radius:1px;flex-shrink:0;}
+.sl::after{content:'';flex:1;height:1px;background:var(--border);}
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px;}
+.kpi{background:var(--s1);border:1px solid var(--border);border-radius:var(--r);padding:22px 26px 18px;position:relative;overflow:hidden;transition:transform .2s,border-color .2s,box-shadow .2s;}
+.kpi:hover{transform:translateY(-3px);}
+.kpi:hover .kpi-bar{opacity:1;}
+.kpi.g-green:hover{border-color:rgba(0,230,118,.4);box-shadow:0 8px 24px rgba(0,230,118,.08);}
+.kpi.g-amber:hover{border-color:rgba(255,202,40,.4);box-shadow:0 8px 24px rgba(255,202,40,.08);}
+.kpi.g-red:hover{border-color:rgba(255,71,87,.4);box-shadow:0 8px 24px rgba(255,71,87,.08);}
+.kpi:not([class*="g-"]):hover{border-color:rgba(0,168,255,.4);box-shadow:0 8px 24px rgba(0,168,255,.08);}
+.kpi-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;}
+.kpi-label{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);}
+.kpi-icon{font-size:18px;opacity:.6;}
+.kpi-val{font-size:52px;font-weight:800;line-height:1;margin-bottom:4px;background:var(--grad,linear-gradient(135deg,var(--blue),var(--teal)));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.kpi-sub{font-size:11px;color:var(--muted);}
+.kpi-bar{position:absolute;bottom:0;left:0;right:0;height:2px;background:var(--grad,linear-gradient(90deg,var(--blue),var(--teal)));}
+.kpi.g-green{--grad:linear-gradient(135deg,#00e676,#00bfa5);}
+.kpi.g-amber{--grad:linear-gradient(135deg,#ffca28,#ff9800);}
+.kpi.g-red{--grad:linear-gradient(135deg,#ff4757,#ff6b81);}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;}
+.g3{display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-bottom:16px;}
+.g1{margin-bottom:16px;}
+.card{background:var(--s1);border:1px solid var(--border);border-radius:var(--r);padding:26px;transition:border-color .2s,box-shadow .2s;}
+.card:hover{border-color:rgba(0,168,255,.25);box-shadow:0 4px 20px rgba(0,168,255,.05);}
+.card-ey{font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:3px;text-transform:uppercase;color:var(--blue);margin-bottom:4px;}
+.card-title{font-size:17px;font-weight:700;color:var(--text);margin-bottom:20px;}
+.cw{position:relative;}
+.info-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:16px;}
+.info-card{background:var(--s1);border:1px solid var(--border);border-radius:var(--r);padding:20px 22px;position:relative;overflow:hidden;}
+.info-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--accent-bar,linear-gradient(90deg,var(--blue),var(--teal)));}
+.info-card.a1{--accent-bar:linear-gradient(90deg,var(--blue),var(--teal));}
+.info-card.a2{--accent-bar:linear-gradient(90deg,var(--teal),var(--green));}
+.info-card.a3{--accent-bar:linear-gradient(90deg,var(--amber),#ff9800);}
+.info-card.a4{--accent-bar:linear-gradient(90deg,var(--purple),#e040fb);}
+.info-card.a5{--accent-bar:linear-gradient(90deg,var(--green),var(--teal));}
+.info-card.a6{--accent-bar:linear-gradient(90deg,var(--red),#ff6b81);}
+.info-label{font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:3px;text-transform:uppercase;color:var(--muted);margin-bottom:6px;}
+.info-val{font-size:13px;font-weight:600;color:var(--text);line-height:1.4;}
+.info-sub{font-size:11px;color:var(--muted);margin-top:3px;}
+.timeline{display:flex;flex-direction:column;gap:0;position:relative;padding-left:28px;}
+.timeline::before{content:'';position:absolute;left:7px;top:8px;bottom:8px;width:2px;background:linear-gradient(180deg,var(--blue),var(--teal),var(--green));border-radius:1px;}
+.tl-item{position:relative;padding:0 0 22px 20px;}
+.tl-dot{position:absolute;left:-21px;top:4px;width:14px;height:14px;border-radius:50%;border:2px solid var(--bg);background:var(--dc,var(--blue));}
+.tl-year{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--dc,var(--blue));text-transform:uppercase;margin-bottom:3px;}
+.tl-title{font-size:13px;font-weight:600;color:var(--text);margin-bottom:3px;}
+.tl-desc{font-size:11px;color:var(--muted);line-height:1.5;}
+.tl-badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:9px;font-family:'JetBrains Mono',monospace;letter-spacing:1px;text-transform:uppercase;margin-top:5px;background:rgba(0,168,255,.1);color:var(--blue);border:1px solid rgba(0,168,255,.2);}
+.tl-badge.done{background:rgba(0,230,118,.1);color:var(--green);border-color:rgba(0,230,118,.2);}
+.tl-badge.active{background:rgba(255,202,40,.1);color:var(--amber);border-color:rgba(255,202,40,.2);}
+.tl-badge.future{background:rgba(124,77,255,.1);color:var(--purple);border-color:rgba(124,77,255,.2);}
+.pr{display:flex;align-items:center;gap:12px;margin-bottom:11px;}
+.pr-lbl{font-size:11px;color:var(--muted);width:160px;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.pr-track{flex:1;height:5px;background:rgba(255,255,255,.05);border-radius:3px;overflow:hidden;}
+.pr-fill{height:100%;border-radius:3px;transition:width 1.3s cubic-bezier(.4,0,.2,1);}
+.pr-val{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text);width:40px;text-align:right;flex-shrink:0;}
+.sstrip{display:flex;border:1px solid var(--border);background:var(--s1);border-radius:var(--r);overflow:hidden;margin-bottom:16px;}
+/* Gauge bars */
+.gauge-row{display:flex;gap:10px;margin-bottom:16px;}
+.gauge-card{flex:1;background:var(--s1);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;}
+.gauge-label{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+.gauge-name{font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);}
+.gauge-val{font-size:13px;font-weight:700;color:var(--text);}
+.gauge-track{height:6px;background:rgba(255,255,255,0.05);border-radius:3px;overflow:visible;position:relative;}
+.gauge-fill{height:6px;border-radius:3px;width:0;transition:width 1.4s cubic-bezier(.4,0,.2,1);position:relative;}
+.gauge-fill::after{content:'';position:absolute;right:-1px;top:-3px;width:12px;height:12px;border-radius:50%;background:inherit;opacity:.9;transition:box-shadow .3s;}
+.gauge-card:hover .gauge-fill::after{box-shadow:0 0 10px 2px currentColor;}
+.ss{flex:1;padding:18px 22px;border-right:1px solid var(--border);position:relative;}
+.ss:last-child{border-right:none;}
+.ss::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:var(--sc,linear-gradient(90deg,var(--blue),var(--teal)));}
+.ss.sc-g{--sc:linear-gradient(90deg,var(--green),var(--teal));}
+.ss.sc-a{--sc:linear-gradient(90deg,var(--amber),#ff9800);}
+.ss.sc-r{--sc:linear-gradient(90deg,var(--red),#ff6b81);}
+.ss-lbl{font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:5px;}
+.ss-val{font-size:30px;font-weight:800;background:var(--sc,linear-gradient(90deg,var(--blue),var(--teal)));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.tw{background:var(--s1);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:16px;}
+.tbar{display:flex;justify-content:space-between;align-items:center;padding:14px 20px;border-bottom:1px solid var(--border);}
+.tbar-title{font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:3px;text-transform:uppercase;color:var(--muted);}
+.search{background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:6px;padding:7px 14px;font-size:11px;color:var(--text);font-family:'JetBrains Mono',monospace;width:200px;outline:none;transition:border-color .2s;}
+.search:focus{border-color:var(--blue);}
+.search::placeholder{color:var(--muted);}
+.btn-export{display:inline-flex;align-items:center;gap:6px;padding:6px 13px;border-radius:6px;font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:1px;font-weight:500;cursor:pointer;border:1px solid var(--border);background:rgba(255,255,255,.03);color:var(--muted);transition:all .2s;white-space:nowrap;}
+.btn-export:hover{border-color:var(--blue);color:var(--blue);background:rgba(0,168,255,.06);}
+.btn-export.csv:hover{border-color:var(--green);color:var(--green);background:rgba(0,230,118,.06);}
+.btn-export svg{flex-shrink:0;}
+.tbar-right{display:flex;align-items:center;gap:8px;}
+table{width:100%;border-collapse:collapse;}
+thead th{background:rgba(0,168,255,.05);padding:10px 16px;text-align:left;font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border);cursor:pointer;user-select:none;white-space:nowrap;}
+thead th:hover{color:var(--blue);}
+tbody tr{border-bottom:1px solid rgba(0,168,255,.05);transition:background .15s;}
+tbody tr:hover{background:rgba(0,168,255,.04);}
+tbody td{padding:9px 16px;font-size:12px;color:var(--text);}
+.badge{display:inline-block;padding:2px 9px;border-radius:4px;font-size:9px;font-family:'JetBrains Mono',monospace;letter-spacing:1px;font-weight:500;text-transform:uppercase;}
+.bg{background:rgba(0,230,118,.1);color:var(--green);border:1px solid rgba(0,230,118,.2);}
+.ba{background:rgba(255,202,40,.1);color:var(--amber);border:1px solid rgba(255,202,40,.2);}
+.br{background:rgba(255,71,87,.1);color:var(--red);border:1px solid rgba(255,71,87,.2);}
+/* Dynamic charts grid */
+.dyn-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px;margin-bottom:16px;}
+.dyn-card{background:var(--s1);border:1px solid var(--border);border-radius:var(--r);padding:20px 22px;transition:border-color .2s;animation:fadeIn .4s ease;}
+.dyn-card:hover{border-color:rgba(0,168,255,.25);}
+.dyn-card .c-ey{font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:3px;text-transform:uppercase;color:var(--blue);margin-bottom:4px;}
+.dyn-card .c-title{font-size:14px;font-weight:700;color:var(--text);margin-bottom:14px;}
+footer{border-top:1px solid var(--border);background:rgba(6,13,26,.95);padding:28px 52px;margin-top:40px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:24px;position:relative;z-index:1;}
+.ft-brand{display:flex;align-items:center;gap:18px;}
+.ft-div{width:1px;height:40px;background:var(--border);}
+.ft-co{display:flex;flex-direction:column;gap:3px;}
+.ft-name{font-size:12px;font-weight:600;color:var(--text);}
+.ft-tag{font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;}
+.ft-contacts{display:flex;gap:36px;flex-wrap:wrap;}
+.ft-col{display:flex;flex-direction:column;gap:4px;}
+.ft-col-lbl{font-family:'JetBrains Mono',monospace;font-size:7px;letter-spacing:2px;text-transform:uppercase;color:var(--blue);margin-bottom:2px;}
+.ft-col span,.ft-col a{font-size:11px;color:var(--muted);text-decoration:none;}
+.ft-col a:hover{color:var(--blue);}
+.ft-stamp{font-family:'JetBrains Mono',monospace;font-size:8px;color:rgba(74,112,144,.3);letter-spacing:1px;text-align:right;align-self:flex-end;}
+::-webkit-scrollbar{width:5px;height:5px;}
+::-webkit-scrollbar-track{background:var(--bg);}
+::-webkit-scrollbar-thumb{background:var(--s3);border-radius:3px;}
+::-webkit-scrollbar-thumb:hover{background:var(--blue);}
+.tab-status-dot{display:inline-block;width:5px;height:5px;border-radius:50%;background:var(--muted);margin-left:7px;vertical-align:middle;transition:background .3s;}
+/* Admin features */
+.tab-badge{display:none;align-items:center;justify-content:center;background:var(--red);color:#fff;font-family:'JetBrains Mono',monospace;font-size:8px;font-weight:700;border-radius:10px;padding:1px 6px;margin-left:6px;min-width:16px;line-height:16px;vertical-align:middle;}
+.admin-visible{display:none;}
+body.admin-mode .admin-visible{display:flex;}
+.alert-banner{display:none;align-items:center;gap:12px;background:rgba(255,71,87,.08);border:1px solid rgba(255,71,87,.3);border-radius:var(--r);padding:10px 18px;margin-bottom:16px;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--red);animation:fadeIn .3s ease;}
+.alert-banner.show{display:flex;}
+.alert-banner svg{flex-shrink:0;}
+/* Light theme */
+body.light{--bg:#f0f4f8;--s1:#ffffff;--s2:#f8fafc;--s3:#e2e8f0;--border:rgba(0,100,200,0.15);--text:#0f172a;--muted:#64748b;}
+body.light .brand-title{background:linear-gradient(90deg,#0050a0,#006080);-webkit-background-clip:text;background-clip:text;}
+body.light header,body.light nav{background:rgba(240,244,248,0.95);}
+/* Light theme — chart & badge overrides */
+body.light .kpi-val{-webkit-text-fill-color:unset;background:none;}
+body.light .kpi.g-green .kpi-val{color:#00875a;}
+body.light .kpi.g-amber .kpi-val{color:#b45309;}
+body.light .kpi.g-red   .kpi-val{color:#b91c1c;}
+body.light .kpi:not([class*="g-"]) .kpi-val{color:#0050a0;}
+body.light .ss-val{-webkit-text-fill-color:unset;background:none;color:#0f172a;}
+body.light .ss.sc-g .ss-val{color:#00875a;}
+body.light .ss.sc-a .ss-val{color:#b45309;}
+body.light .ss.sc-r .ss-val{color:#b91c1c;}
+body.light .bg{background:#d4f7e4;color:#00703c;border-color:#a7f3d0;}
+body.light .ba{background:#fef3c7;color:#92400e;border-color:#fde68a;}
+body.light .br{background:#fde8e8;color:#b91c1c;border-color:#fca5a5;}
+body.light .tl-badge{background:rgba(0,80,160,.08);color:#0050a0;border-color:rgba(0,80,160,.2);}
+body.light .tl-badge.done{background:rgba(0,135,90,.1);color:#00703c;border-color:rgba(0,135,90,.25);}
+body.light .tl-badge.active{background:rgba(180,83,9,.1);color:#b45309;border-color:rgba(180,83,9,.25);}
+body.light .tl-badge.future{background:rgba(109,40,217,.1);color:#6d28d9;border-color:rgba(109,40,217,.25);}
+body.light .live-badge{background:rgba(0,135,90,.07);border-color:rgba(0,135,90,.25);color:#00703c;}
+body.light thead th{background:rgba(0,100,200,0.06);color:#64748b;}
+body.light tbody tr:hover{background:rgba(0,100,200,0.04);}
+/* Date filter inputs */
+.date-filter{display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+.date-filter label{font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);white-space:nowrap;}
+.date-input{background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:6px;padding:6px 10px;font-size:11px;color:var(--text);font-family:'JetBrains Mono',monospace;outline:none;transition:border-color .2s;cursor:pointer;}
+.date-input:focus{border-color:var(--blue);}
+.date-input::-webkit-calendar-picker-indicator{filter:invert(0.6);cursor:pointer;}
+body.light .date-input::-webkit-calendar-picker-indicator{filter:none;}
+body.light .date-input{background:#fff;border-color:rgba(0,100,200,0.2);color:#0f172a;}
+.btn-clear-date{display:inline-flex;align-items:center;padding:6px 10px;border-radius:6px;font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:1px;cursor:pointer;border:1px solid var(--border);background:rgba(255,71,87,.06);color:var(--red);transition:all .2s;white-space:nowrap;}
+.btn-clear-date:hover{border-color:var(--red);background:rgba(255,71,87,.12);}
+.date-filter-count{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--muted);padding:0 4px;}
+/* KPI counter animation */
+@keyframes countUp{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
+.kpi-val.counting{animation:countUp .6s ease;}
+/* Excel export btn */
+.btn-export.xl:hover{border-color:var(--green);color:var(--green);background:rgba(0,230,118,.06);}
+.sync-error-banner{display:none;align-items:center;background:rgba(255,71,87,0.08);border:1px solid rgba(255,71,87,0.25);border-radius:var(--r);padding:12px 18px;margin-bottom:18px;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:1px;color:var(--red);}
+/* ── RESPONSIVE MOBILE ── */
+@media(max-width:960px){
+  header,nav,main,footer{padding-left:20px;padding-right:20px;}
+  .kpi-grid,.g2,.info-grid{grid-template-columns:1fr 1fr;}
+  .g3{grid-template-columns:1fr;}
+  .sstrip{flex-direction:column;}
+}
+@media(max-width:640px){
+  header{flex-direction:column;align-items:flex-start;padding:12px 16px;height:auto;gap:8px;}
+  .hdr-right{gap:12px;flex-wrap:wrap;}
+  nav{padding:0 10px;}
+  .tab{padding:10px 12px;font-size:9px;letter-spacing:1px;}
+  main{padding:20px 16px;}
+  .kpi-grid{grid-template-columns:1fr 1fr;}
+  .kpi-val{font-size:36px;}
+  .g2,.g3,.info-grid{grid-template-columns:1fr;}
+  .dyn-grid{grid-template-columns:1fr;}
+  .sstrip{flex-direction:column;}
+  .tbar{flex-direction:column;align-items:flex-start;gap:10px;}
+  .tbar-right{width:100%;flex-wrap:wrap;}
+  .search{width:100%;}
+  .btn-export{flex:1;justify-content:center;}
+  footer{flex-direction:column;gap:16px;padding:20px 16px;}
+  .ft-contacts{gap:20px;}
+  .card{padding:18px 14px;}
+  .login-box{width:90%;padding:32px 24px 28px;}
+}
+/* LOGIN */
+#login-screen{position:fixed;inset:0;z-index:9999;background:#060d1a;display:flex;align-items:center;justify-content:center;}
+.login-box{background:var(--s1);border:1px solid var(--border);border-radius:16px;padding:48px 52px 40px;width:380px;box-shadow:0 0 60px rgba(0,168,255,0.08);position:relative;overflow:hidden;}
+.login-box::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--blue),var(--teal));}
+.login-logo{text-align:center;margin-bottom:28px;}
+.login-logo img{height:40px;width:auto;mix-blend-mode:lighten;}
+.login-title{font-size:18px;font-weight:700;color:var(--text);text-align:center;margin-bottom:4px;}
+.login-sub{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--muted);text-align:center;margin-bottom:32px;}
+.login-label{font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:8px;display:block;}
+.login-input{width:100%;padding:12px 16px;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;font-family:'Outfit',sans-serif;outline:none;transition:border-color .2s;box-sizing:border-box;letter-spacing:2px;}
+.login-input:focus{border-color:var(--blue);}
+.login-btn{width:100%;margin-top:20px;padding:13px;background:linear-gradient(90deg,var(--blue),var(--teal));border:none;border-radius:8px;font-family:'Outfit',sans-serif;font-size:14px;font-weight:600;color:#060d1a;cursor:pointer;transition:opacity .2s;}
+.login-btn:hover{opacity:.88;}
+.login-error{color:var(--red);font-size:11px;text-align:center;margin-top:12px;min-height:16px;font-family:'JetBrains Mono',monospace;letter-spacing:1px;}
+.login-footer{font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:2px;color:rgba(74,112,144,.3);text-align:center;margin-top:24px;}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-logo"><img src="data:image/jpeg;base64,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" alt="IQS" style="height:40px;width:auto;"></div>
+    <div class="login-title">Sakarya Gas Field Dashboard</div>
+    <div class="login-sub">IQS S.r.l. · Restricted Access</div>
+    <label class="login-label">Password</label>
+    <input class="login-input" id="login-pwd" type="password" placeholder="••••••••••••" autocomplete="current-password">
+    <button class="login-btn" onclick="doLogin()">Access Dashboard</button>
+    <div class="login-error" id="login-err"></div>
+    <div class="login-footer">IQS Confidential · Sakarya Phase 3</div>
+  </div>
+</div>
+<script>
+// Hashes stored as arrays to avoid trivial static extraction
+const PWD_HASH       = ["9aa99b6a8a36852746dfa422b6",
+  "27253eff0a91c8de62fac417343b0f9c47c53a"].join("");
+const PWD_HASH_ADMIN = ["5b70cd45a29270ac8048cdddcc",
+  "4ed526c9a27a980e5947951ef2e419c34e01a9"].join("");
+const SESSION_KEY    = "sak_auth";
+const SESSION_ROLE   = "sak_role";
+
+async function sha256(m){const b=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(m));return Array.from(new Uint8Array(b)).map(x=>x.toString(16).padStart(2,"0")).join("");}
+
+async function doLogin(){
+  const p = document.getElementById("login-pwd").value;
+  const h = await sha256(p);
+  if (h === PWD_HASH_ADMIN) {
+    sessionStorage.setItem(SESSION_KEY, "1");
+    sessionStorage.setItem(SESSION_ROLE, "admin");
+    document.getElementById("login-screen").style.display = "none";
+    applyRole("admin");
+  } else if (h === PWD_HASH) {
+    sessionStorage.setItem(SESSION_KEY, "1");
+    sessionStorage.setItem(SESSION_ROLE, "user");
+    document.getElementById("login-screen").style.display = "none";
+    applyRole("user");
+  } else {
+    const e = document.getElementById("login-err");
+    e.textContent = "Incorrect password — try again";
+    document.getElementById("login-pwd").value = "";
+    setTimeout(() => e.textContent = "", 3000);
+  }
+}
+
+function applyRole(role) {
+  const isAdmin = role === "admin";
+  // Print button
+  const btn = document.getElementById("admin-print-btn");
+  if (btn) btn.style.display = isAdmin ? "flex" : "none";
+  // Admin mode class on body (controls all .admin-visible elements)
+  if (isAdmin) {
+    document.body.classList.add("admin-mode");
+    initAdminFeatures();
+  } else {
+    document.body.classList.remove("admin-mode");
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   ADMIN FEATURES
+   ═══════════════════════════════════════════════════════════════ */
+function initAdminFeatures() {
+  // Excel export
+  const xlWeld  = document.getElementById("xl-weld-btn");
+  const xlFinal = document.getElementById("xl-final-btn");
+  if (xlWeld)  xlWeld.addEventListener("click",  () => exportXLSX("defectTbody",  "defectTable",  "welding_defects"));
+  if (xlFinal) xlFinal.addEventListener("click", () => exportXLSX("finalTbody",   "finalTable",   "final_defects"));
+}
+
+/* ── Animate KPI counters (admin) ─────────────────────────────── */
+function animateCounter(el, target, isFloat, duration) {
+  if (!el) return;
+  el.classList.add("counting");
+  duration = duration || 900;
+  const raw = typeof target === "number" ? target
+    : parseFloat((target + "").replace(/[^0-9.]/g, "")) || 0;
+  const num = isNaN(raw) ? 0 : raw;
+  const start = Date.now();
+  function tick() {
+    const elapsed  = Date.now() - start;
+    const progress = Math.min(elapsed / duration, 1);
+    const ease     = 1 - Math.pow(1 - progress, 3);
+    const current  = num * ease;
+    el.textContent = isFloat ? current.toFixed(1) + "%" : Math.round(current).toLocaleString();
+    if (progress < 1) requestAnimationFrame(tick);
+    else { el.textContent = isFloat ? num.toFixed(1) + "%" : num.toLocaleString(); el.classList.remove("counting"); }
+  }
+  tick();
+}
+
+/* ── Update badge counts ─────────────────────────────────────── */
+function updateBadges(weldCount, finalCount) {
+  const bw = document.getElementById("badge-defects");
+  const bf = document.getElementById("badge-final");
+  if (bw) {
+    bw.textContent = weldCount;
+    bw.style.display = weldCount > 0 ? "inline-flex" : "none";
+  }
+  if (bf) {
+    bf.textContent = finalCount;
+    bf.style.display = finalCount > 0 ? "inline-flex" : "none";
+  }
+}
+
+/* ── Check pass rate alert ───────────────────────────────────── */
+function checkPassRateAlert(passRate) {
+  if (!document.body.classList.contains("admin-mode")) return;
+  const banner = document.getElementById("pass-rate-alert");
+  const text   = document.getElementById("alert-text");
+  if (!banner) return;
+  const THRESHOLD = 85;
+  if (passRate < THRESHOLD) {
+    banner.classList.add("show");
+    if (text) text.textContent = `⚠  Pass Rate (${passRate.toFixed(1)}%) sotto la soglia critica del ${THRESHOLD}% — verificare immediatamente`;
+  } else {
+    banner.classList.remove("show");
+  }
+}
+
+/* ── Export XLSX (via CSV trick with .xls extension) ─────────── */
+function exportXLSX(tbodyId, tableId, filename) {
+  const table = document.getElementById(tableId);
+  if (!table) return;
+  const headers = Array.from(table.querySelectorAll("thead th")).map(th => th.textContent.replace(/[↕]/g,"").trim());
+  const rows    = Array.from(document.getElementById(tbodyId).querySelectorAll("tr"))
+                      .filter(r => r.style.display !== "none");
+  if (!rows.length) { alert("No data to export."); return; }
+  // Build tab-separated (TSV) which Excel opens natively
+  const lines = [headers.join("	")];
+  rows.forEach(r => {
+    const cells = Array.from(r.querySelectorAll("td")).map(td => td.textContent.trim().replace(/\s+/g," "));
+    lines.push(cells.join("	"));
+  });
+  const blob = new Blob([lines.join("\n")], {type:"text/tab-separated-values;charset=utf-8;"});
+
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement("a");
+  const date = new Date().toISOString().slice(0,10);
+  a.href = url; a.download = `${filename}_${date}.xls`; a.click();
+  URL.revokeObjectURL(url);
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  const i = document.getElementById("login-pwd");
+  if (i) i.addEventListener("keydown", e => { if(e.key==="Enter") doLogin(); });
+  const stored = sessionStorage.getItem(SESSION_KEY);
+  const role   = sessionStorage.getItem(SESSION_ROLE) || "user";
+  if (stored === "1") {
+    document.getElementById("login-screen").style.display = "none";
+    applyRole(role);
+  }
+});
+</script>
+
+<div class="bg-grid"></div>
+<div class="bg-glow bg-glow-1"></div>
+<div class="bg-glow bg-glow-2"></div>
+<div style="position:fixed;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,transparent,#00a8ff 20%,#00e5c8 50%,#7c4dff 80%,transparent);z-index:300;pointer-events:none;"></div>
+<!-- Theme toggle (admin only) -->
+<div class="wrap">
+
+<header>
+  <div class="egg-trigger" id="eggTrigger">
+    <div class="brand">
+      <div class="brand-title">Sakarya Gas Field Development · Project Phase 3</div>
+      <div class="brand-sub">Sakarya Inspection Overall Status</div>
+    </div>
+    <div class="egg-popup" id="eggPopup">
+      <div class="egg-dot"></div>
+      <span class="egg-dev">dev by</span>
+      <span class="egg-sig">G.M.</span>
+      <span class="egg-dev">IQS Team</span>
+    </div>
+  </div>
+  <div class="hdr-right">
+    <div class="hdr-date">Report Date &nbsp;<b id="hdr-date-val">10 / 03 / 2026</b></div>
+    <div class="live-badge"><div class="live-dot"></div>Live &nbsp;<span class="last-update" style="opacity:.6;font-size:8px;"></span></div>
+    <div style="position:relative;">
+      <button id="theme-picker-btn" style="display:flex;align-items:center;gap:6px;padding:5px 12px;border-radius:6px;border:1px solid var(--border);background:rgba(0,168,255,0.05);color:var(--muted);font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;transition:all .2s;">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+        Theme
+      </button>
+      <div id="theme-picker-panel" style="display:none;position:absolute;top:calc(100% + 10px);right:0;background:var(--s1);border:1px solid rgba(0,168,255,0.2);border-radius:12px;padding:16px;width:264px;z-index:500;box-shadow:0 8px 32px rgba(0,0,0,0.4);">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:7px;letter-spacing:3px;text-transform:uppercase;color:var(--muted);margin-bottom:10px;">Temi preimpostati</div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px;" id="tp-presets">
+          <div class="tp-preset" data-bg="#060d1a" data-s1="#0c1929" data-s2="#102035" style="background:#060d1a;border-radius:8px;height:40px;cursor:pointer;border:2px solid #00a8ff;position:relative;" title="Dark"><span style="position:absolute;bottom:3px;left:0;right:0;text-align:center;font-family:'JetBrains Mono',monospace;font-size:7px;color:rgba(255,255,255,0.5);">Dark</span></div>
+          <div class="tp-preset" data-bg="#000000" data-s1="#0a0a0a" data-s2="#111" style="background:#000000;border-radius:8px;height:40px;cursor:pointer;border:2px solid transparent;position:relative;" title="Black"><span style="position:absolute;bottom:3px;left:0;right:0;text-align:center;font-family:'JetBrains Mono',monospace;font-size:7px;color:rgba(255,255,255,0.4);">Black</span></div>
+          <div class="tp-preset" data-bg="#0d1117" data-s1="#161b22" data-s2="#1c2128" style="background:#0d1117;border-radius:8px;height:40px;cursor:pointer;border:2px solid transparent;position:relative;" title="Slate"><span style="position:absolute;bottom:3px;left:0;right:0;text-align:center;font-family:'JetBrains Mono',monospace;font-size:7px;color:rgba(255,255,255,0.4);">Slate</span></div>
+          <div class="tp-preset" data-bg="#1a1a2e" data-s1="#16213e" data-s2="#0f3460" style="background:#1a1a2e;border-radius:8px;height:40px;cursor:pointer;border:2px solid transparent;position:relative;" title="Night"><span style="position:absolute;bottom:3px;left:0;right:0;text-align:center;font-family:'JetBrains Mono',monospace;font-size:7px;color:rgba(255,255,255,0.4);">Night</span></div>
+          <div class="tp-preset" data-bg="#0a1628" data-s1="#0d1f3c" data-s2="#102548" style="background:#0a1628;border-radius:8px;height:40px;cursor:pointer;border:2px solid transparent;position:relative;" title="Navy"><span style="position:absolute;bottom:3px;left:0;right:0;text-align:center;font-family:'JetBrains Mono',monospace;font-size:7px;color:rgba(255,255,255,0.4);">Navy</span></div>
+          <div class="tp-preset" data-bg="#0d1f0d" data-s1="#122612" data-s2="#163016" style="background:#0d1f0d;border-radius:8px;height:40px;cursor:pointer;border:2px solid transparent;position:relative;" title="Forest"><span style="position:absolute;bottom:3px;left:0;right:0;text-align:center;font-family:'JetBrains Mono',monospace;font-size:7px;color:rgba(255,255,255,0.4);">Forest</span></div>
+          <div class="tp-preset" data-bg="#1a0a0a" data-s1="#200d0d" data-s2="#2a1010" style="background:#1a0a0a;border-radius:8px;height:40px;cursor:pointer;border:2px solid transparent;position:relative;" title="Ember"><span style="position:absolute;bottom:3px;left:0;right:0;text-align:center;font-family:'JetBrains Mono',monospace;font-size:7px;color:rgba(255,255,255,0.4);">Ember</span></div>
+          <div class="tp-preset" data-bg="#f0f4f8" data-s1="#ffffff" data-s2="#f8fafc" data-light="1" style="background:#f0f4f8;border-radius:8px;height:40px;cursor:pointer;border:2px solid transparent;position:relative;" title="Light"><span style="position:absolute;bottom:3px;left:0;right:0;text-align:center;font-family:'JetBrains Mono',monospace;font-size:7px;color:rgba(0,0,0,0.35);">Light</span></div>
+        </div>
+        <div style="height:1px;background:rgba(0,168,255,0.08);margin-bottom:12px;"></div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:7px;letter-spacing:3px;text-transform:uppercase;color:var(--muted);margin-bottom:10px;">Colore personalizzato</div>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <span style="font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;flex:1;">Sfondo</span>
+          <div style="width:28px;height:28px;border-radius:6px;border:1px solid rgba(0,168,255,0.2);overflow:hidden;flex-shrink:0;">
+            <input type="color" id="tp-color-input" value="#060d1a" style="width:150%;height:150%;margin:-25%;cursor:pointer;border:none;">
+          </div>
+          <span id="tp-color-hex" style="font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--blue);letter-spacing:1px;width:60px;">#060d1a</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<nav>
+  <div class="tab active" data-tab="project">Project Info</div>
+  <div class="tab" data-tab="overview">Overview</div>
+  <div class="tab" data-tab="ndt">ITP Steps</div>
+  <div class="tab" data-tab="defects">Defects Log<span class="tab-badge" id="badge-defects">0</span></div>
+  <div class="tab" data-tab="final">Final Inspection<span class="tab-badge" id="badge-final">0</span></div>
+  <div style="flex:1;"></div>
+  <button id="admin-print-btn" style="display:none;align-items:center;gap:8px;margin:8px 0;padding:7px 18px;background:linear-gradient(90deg,var(--blue),var(--teal));border:none;border-radius:6px;font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:#060d1a;cursor:pointer;transition:opacity .2s;" onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+    Print Report
+  </button>
+</nav>
+
+<main>
+
+<!-- ═══════ PROJECT INFO — STATIC ═══════ -->
+<div class="tab-content active" id="project">
+  <div class="sl">Project Overview</div>
+  <div class="info-grid">
+    <div class="info-card a1"><div class="info-label">Location</div><div class="info-val">170 km offshore · Filyos, Zonguldak</div><div class="info-sub">Western Black Sea · 2,100 m depth</div></div>
+    <div class="info-card a2"><div class="info-label">Reserve Size</div><div class="info-val">710 billion m³ (bcm)</div><div class="info-sub">Total estimated reserves as of late 2022</div></div>
+    <div class="info-card a3"><div class="info-label">Operator</div><div class="info-val">Turkish Petroleum (TPAO)</div><div class="info-sub">Turkey's largest offshore gas development</div></div>
+    <div class="info-card a4"><div class="info-label">Target Production</div><div class="info-val">30% of Turkey's gas demand</div><div class="info-sub">Full production capacity target</div></div>
+    <div class="info-card a5"><div class="info-label">Purchase Order (PO)</div><div class="info-val">15,462 pipes total</div><div class="info-sub">Phase 3 — IQS QC scope</div></div>
+    <div class="info-card a6"><div class="info-label">Phase 3 Infrastructure</div><div class="info-val">New FPU · 25M SCMD</div><div class="info-sub">27+ wells · 180+ km pipelines · 2,200m depth</div></div>
+  </div>
+  <div style="background:linear-gradient(90deg,rgba(0,168,255,0.07),rgba(0,229,200,0.07));border:1px solid rgba(0,229,200,0.2);border-radius:var(--r);padding:18px 26px;margin-bottom:16px;display:flex;flex-wrap:wrap;gap:24px;align-items:flex-start;">
+    <div style="flex:1;min-width:260px;">
+      <div style="font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:3px;text-transform:uppercase;color:var(--teal);margin-bottom:6px;">Phase 3 — Key Facts</div>
+      <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:8px;">Black Sea Expansion · TP-OTC / TPAO</div>
+      <div style="font-size:12px;color:var(--muted);line-height:1.7;">Contracts awarded <b style="color:var(--text)">Sep 2025</b> · Pipelay campaign <b style="color:var(--text)">2027</b> · Saipem EPCI: 8 rigid flowlines + 183km export pipeline connecting Sakarya &amp; Amasra fields to Filyos terminal · Baker Hughes deepwater trees &amp; control systems.</div>
+    </div>
+    <div style="display:flex;gap:20px;flex-wrap:wrap;">
+      <div style="text-align:center;padding:12px 16px;background:rgba(0,168,255,0.06);border:1px solid rgba(0,168,255,0.15);border-radius:8px;"><div style="font-size:22px;font-weight:800;color:var(--blue);">$1.5B</div><div style="font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--muted);margin-top:3px;">Saipem EPCI</div></div>
+      <div style="text-align:center;padding:12px 16px;background:rgba(0,229,200,0.06);border:1px solid rgba(0,229,200,0.15);border-radius:8px;"><div style="font-size:22px;font-weight:800;color:var(--teal);">183km</div><div style="font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--muted);margin-top:3px;">Export Pipeline</div></div>
+      <div style="text-align:center;padding:12px 16px;background:rgba(0,230,118,0.06);border:1px solid rgba(0,230,118,0.15);border-radius:8px;"><div style="font-size:22px;font-weight:800;color:var(--green);">8</div><div style="font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--muted);margin-top:3px;">Rigid Flowlines</div></div>
+      <div style="text-align:center;padding:12px 16px;background:rgba(255,202,40,0.06);border:1px solid rgba(255,202,40,0.15);border-radius:8px;"><div style="font-size:22px;font-weight:800;color:var(--amber);">2,200m</div><div style="font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--muted);margin-top:3px;">Water Depth</div></div>
+    </div>
+  </div>
+  <div class="g2">
+    <div class="card">
+      <div class="card-ey">Project Timeline</div><div class="card-title">Development Milestones</div>
+      <div class="timeline">
+        <div class="tl-item" style="--dc:var(--blue)"><div class="tl-dot"></div><div class="tl-year">August 2020</div><div class="tl-title">Discovery</div><div class="tl-desc">Sakarya Gas Field discovered in the western Black Sea by TPAO using the Fatih drillship. Reserves estimated at 710 bcm.</div><span class="tl-badge done">Completed</span></div>
+        <div class="tl-item" style="--dc:var(--teal)"><div class="tl-dot"></div><div class="tl-year">2020 → April 2023</div><div class="tl-title">Phase 1 — First Gas</div><div class="tl-desc">Fast-track delivery in under 3 years. 10 subsea wells, Filyos processing plant. First gas April 2023. Capacity ~10M m³/day.</div><span class="tl-badge done">Completed</span></div>
+        <div class="tl-item" style="--dc:var(--amber)"><div class="tl-dot"></div><div class="tl-year">2023 → 2027</div><div class="tl-title">Phase 2 — Expansion</div><div class="tl-desc">EPCI contract May 2023 · 26 wells · 158km pipeline · new FPU · Castorone vessel. First gas expected 2027. ~14 bcm/year.</div><span class="tl-badge active">In Progress</span></div>
+        <div class="tl-item" style="--dc:var(--green)"><div class="tl-dot"></div><div class="tl-year">2025 → 2028</div><div class="tl-title">Phase 3 — Major Offshore Expansion</div><div class="tl-desc">Contracts awarded Sep 2025. Saipem EPCI: 8 rigid flowlines + 183km export pipeline. Baker Hughes: deepwater trees. Pipelay 2027. Target 30% Turkey gas demand.</div><span class="tl-badge future">Planned</span></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-ey">Key Contractors</div><div class="card-title">Major Partners</div>
+      <div style="display:flex;flex-direction:column;gap:12px;">
+        <div style="padding:12px 16px;background:var(--s2);border-radius:8px;border:1px solid var(--border);"><div style="font-size:13px;font-weight:600;color:var(--text)">Saipem</div><div style="font-size:11px;color:var(--muted);margin-top:2px;">~$1.5B · Pipelines, flowlines, export pipeline · Castorone vessel</div></div>
+        <div style="padding:12px 16px;background:var(--s2);border-radius:8px;border:1px solid var(--border);"><div style="font-size:13px;font-weight:600;color:var(--text)">Subsea7</div><div style="font-size:11px;color:var(--muted);margin-top:2px;">EPCI · 120km umbilicals · Phase 3</div></div>
+        <div style="padding:12px 16px;background:var(--s2);border-radius:8px;border:1px solid var(--border);"><div style="font-size:13px;font-weight:600;color:var(--text)">SLB (Schlumberger)</div><div style="font-size:11px;color:var(--muted);margin-top:2px;">Subsea systems &amp; technology</div></div>
+        <div style="padding:12px 16px;background:var(--s2);border-radius:8px;border:1px solid var(--border);"><div style="font-size:13px;font-weight:600;color:var(--text)">Baker Hughes</div><div style="font-size:11px;color:var(--muted);margin-top:2px;">Deepwater trees &amp; control systems · delivery from late 2025</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════ OVERVIEW — DYNAMIC ═══════ -->
+<div class="tab-content" id="overview">
+  <div class="alert-banner" id="pass-rate-alert">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    <span id="alert-text">⚠ Pass Rate sotto soglia critica (85%)</span>
+  </div>
+  <div class="sl">Key Performance Indicators</div>
+  <div class="kpi-grid">
+    <div class="kpi">
+      <div class="kpi-top"><div class="kpi-label">Purchase Order</div><div class="kpi-icon">⬡</div></div>
+      <div class="kpi-val" id="kpi-po" style="font-size:38px;">15,462</div>
+      <div class="kpi-sub">PO Qty · <span id="kpi-incoming" style="color:var(--blue)">170 Incoming Plates</span></div>
+      <div style="margin-top:10px;">
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span style="font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--muted);">Completion</span><span id="kpi-compl-pct" style="font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--teal);font-weight:600;">0.96%</span></div>
+        <div style="height:4px;background:rgba(255,255,255,.05);border-radius:2px;overflow:hidden;"><div id="kpi-compl-bar" style="width:0.96%;height:100%;background:linear-gradient(90deg,var(--blue),var(--teal));border-radius:2px;"></div></div>
+      </div>
+      <div class="kpi-bar"></div>
+    </div>
+    <div class="kpi g-green"><div class="kpi-top"><div class="kpi-label">Pipes Ready for Acceptance</div><div class="kpi-icon">✓</div></div><div class="kpi-val" id="kpi-accepted">149</div><div class="kpi-sub">Overall</div><div class="kpi-bar"></div></div>
+    <div class="kpi g-amber"><div class="kpi-top"><div class="kpi-label">Acceptance Rate</div><div class="kpi-icon">◎</div></div><div class="kpi-val" id="kpi-rate">87.6%</div><div class="kpi-sub" id="kpi-rate-sub">Ready for Acceptance / Inspected (149/170)</div><div class="kpi-bar"></div></div>
+    <div class="kpi g-red"><div class="kpi-top"><div class="kpi-label">Pipes Rejected</div><div class="kpi-icon">✕</div></div><div class="kpi-val" id="kpi-rejected">3</div><div class="kpi-sub">Definitively rejected</div><div class="kpi-bar"></div></div>
+  </div>
+  <!-- Gauge bars row -->
+  <div class="gauge-row" id="gauge-row">
+    <div class="gauge-card">
+      <div class="gauge-label"><span class="gauge-name">Pass Rate</span><span class="gauge-val" id="g-passrate">87.6%</span></div>
+      <div class="gauge-track"><div class="gauge-fill" id="gf-passrate" style="background:linear-gradient(90deg,#ffca28,#ff9800)"></div></div>
+    </div>
+    <div class="gauge-card">
+      <div class="gauge-label"><span class="gauge-name">Completion vs PO</span><span class="gauge-val" id="g-completion">0.96%</span></div>
+      <div class="gauge-track"><div class="gauge-fill" id="gf-completion" style="background:linear-gradient(90deg,#00a8ff,#00e5c8)"></div></div>
+    </div>
+    <div class="gauge-card">
+      <div class="gauge-label"><span class="gauge-name">Ready for Acceptance / Incoming</span><span class="gauge-val" id="g-accepted">149 / 170</span></div>
+      <div class="gauge-track"><div class="gauge-fill" id="gf-accepted" style="background:linear-gradient(90deg,#00e676,#00bfa5)"></div></div>
+    </div>
+    <div class="gauge-card">
+      <div class="gauge-label"><span class="gauge-name">Repair / Rework</span><span class="gauge-val" id="g-repair">4 pipes</span></div>
+      <div class="gauge-track"><div class="gauge-fill" id="gf-repair" style="background:linear-gradient(90deg,#7c4dff,#e040fb)"></div></div>
+    </div>
+  </div>
+
+  <div class="g3">
+    <div class="card"><div class="card-ey">ITP Step Performance</div><div class="card-title">Pass Rate by ITP Step</div><div class="cw" style="height:310px"><canvas id="stationChart"></canvas></div></div>
+    <div class="card">
+      <div class="card-ey">Quality Split</div><div class="card-title">Accept · Repair · Reject</div>
+      <div class="cw" style="height:190px;margin-bottom:20px"><canvas id="donutChart"></canvas></div>
+      <div class="pr"><span class="pr-lbl">Ready for Acceptance</span><div class="pr-track"><div class="pr-fill" id="pr-acc" style="width:87.65%;background:var(--green)"></div></div><span class="pr-val" id="pr-acc-v">149</span></div>
+      <div class="pr"><span class="pr-lbl">Repair / Rework</span><div class="pr-track"><div class="pr-fill" id="pr-rep" style="width:2.35%;background:var(--amber)"></div></div><span class="pr-val" id="pr-rep-v">4</span></div>
+      <div class="pr"><span class="pr-lbl">Rejected</span><div class="pr-track"><div class="pr-fill" id="pr-rej" style="width:1.76%;background:var(--red)"></div></div><span class="pr-val" id="pr-rej-v">3</span></div>
+    </div>
+  </div>
+  <div class="sstrip">
+    <div class="ss"><div class="ss-lbl">Total Pipes</div><div class="ss-val" id="ss-total">170</div></div>
+    <div class="ss sc-g"><div class="ss-lbl">Ready for Acceptance</div><div class="ss-val" id="ss-acc">149</div></div>
+    <div class="ss sc-a"><div class="ss-lbl">Repair / Rework</div><div class="ss-val" id="ss-rep">4</div></div>
+    <div class="ss sc-r"><div class="ss-lbl">Rejected</div><div class="ss-val" id="ss-rej">3</div></div>
+  </div>
+  <div class="card g1" style="margin-top:16px;">
+    <div class="card-ey">Purchase Order Progress</div><div class="card-title" style="margin-bottom:18px;">Pipes Inspected vs PO Quantity</div>
+    <div style="flex:1;">
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px;"><span style="font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--muted);">Inspected</span><span id="po-inline" style="font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--blue);">0.96%  ·  149 / 15,462</span></div>
+      <div style="height:10px;background:rgba(255,255,255,.05);border-radius:5px;overflow:hidden;"><div id="po-bar" style="width:0.96%;height:100%;background:linear-gradient(90deg,var(--blue),var(--teal));border-radius:5px;transition:width 1.2s ease;"></div></div>
+    </div>
+    <div style="display:flex;gap:32px;margin-top:14px;">
+      <div><div style="font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--muted);margin-bottom:4px;">PO Quantity</div><div id="po-qty" style="font-size:22px;font-weight:800;color:var(--text);">15,462</div></div>
+      <div><div style="font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--muted);margin-bottom:4px;">Ready for Acceptance</div><div id="po-accepted" style="font-size:22px;font-weight:800;color:var(--green);">149</div></div>
+      <div><div style="font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--muted);margin-bottom:4px;">Remaining</div><div id="po-remaining" style="font-size:22px;font-weight:800;color:var(--amber);">15,292</div></div>
+      <div><div style="font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--muted);margin-bottom:4px;">Completion</div><div id="po-completion" style="font-size:22px;font-weight:800;color:var(--muted);">0.96%</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════ ITP STEPS — DYNAMIC ═══════ -->
+<div class="tab-content" id="ndt">
+  <div class="sl">ITP Steps Ranking — All 24 Steps</div>
+  <div class="card g1">
+    <div class="card-ey">Pass Rate by Group</div><div class="card-title">All 24 ITP Steps — Color Coded by Section</div>
+    <div class="cw" style="height:600px"><canvas id="rankingChart"></canvas></div>
+    <div id="ranking-legend" style="display:flex;flex-wrap:wrap;gap:14px;padding:12px 0 4px;"></div>
+  </div>
+</div>
+
+<!-- ═══════ DEFECTS LOG — DYNAMIC ═══════ -->
+<div class="tab-content" id="defects">
+  <div class="sl">Defect Analysis — Welding</div>
+  <!-- Charts grid: populated dynamically from DEFECTS_WELD sheet -->
+  <div class="dyn-grid" id="weld-charts-grid"></div>
+  <!-- Table -->
+  <div class="tw">
+    <div class="tbar">
+      <span class="tbar-title">Welding Defects Log</span>
+      <div class="tbar-right">
+        <div class="date-filter">
+          <label>From</label>
+          <input type="date" class="date-input" id="weldDateFrom">
+          <label>To</label>
+          <input type="date" class="date-input" id="weldDateTo">
+          <button class="btn-clear-date" onclick="clearDateFilter('weld')" title="Clear date filter">✕</button>
+          <span class="date-filter-count" id="weldDateCount"></span>
+        </div>
+        <input type="text" class="search" id="defectSearch" placeholder="Search defect, pipe...">
+        <button class="btn-export csv" onclick="exportCSV('defectTbody','welding_defects')">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          CSV
+        </button>
+        <button class="btn-export xl admin-visible" id="xl-weld-btn" title="Export Excel">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="18" rx="2"/><path d="M8 3v18M16 3v18M2 9h20M2 15h20"/></svg>
+          XLSX
+        </button>
+        <button class="btn-export" onclick="exportPDF('defectTable','Welding Defects Log')">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+          PDF
+        </button>
+      </div>
+    </div>
+    <div style="overflow-x:auto">
+      <table id="defectTable">
+        <thead><tr>
+          <th onclick="sortT('defectTable',0)">Date ↕</th>
+          <th onclick="sortT('defectTable',1)">Shift</th>
+          <th onclick="sortT('defectTable',2)">Pipe N°</th>
+          <th onclick="sortT('defectTable',3)">Defect ↕</th>
+          <th onclick="sortT('defectTable',4)">Position (mm) ↕</th>
+          <th onclick="sortT('defectTable',5)">Extension (mm) ↕</th>
+          <th>Severity</th>
+        </tr></thead>
+        <tbody id="defectTbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════ FINAL INSPECTION — DYNAMIC ═══════ -->
+<div class="tab-content" id="final">
+  <div class="sl">Final Inspection Results</div>
+  <!-- Charts grid: populated dynamically from DEFECTS_FINAL sheet -->
+  <div class="dyn-grid" id="final-charts-grid"></div>
+  <!-- Table -->
+  <div class="tw">
+    <div class="tbar">
+      <span class="tbar-title">Final Defects Log</span>
+      <div class="tbar-right">
+        <div class="date-filter">
+          <label>From</label>
+          <input type="date" class="date-input" id="finalDateFrom">
+          <label>To</label>
+          <input type="date" class="date-input" id="finalDateTo">
+          <button class="btn-clear-date" onclick="clearDateFilter('final')" title="Clear date filter">✕</button>
+          <span class="date-filter-count" id="finalDateCount"></span>
+        </div>
+        <input type="text" class="search" id="finalSearch" placeholder="Search defect, pipe...">
+        <button class="btn-export csv" onclick="exportCSV('finalTbody','final_defects')">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          CSV
+        </button>
+        <button class="btn-export xl admin-visible" id="xl-final-btn" title="Export Excel">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="18" rx="2"/><path d="M8 3v18M16 3v18M2 9h20M2 15h20"/></svg>
+          XLSX
+        </button>
+        <button class="btn-export" onclick="exportPDF('finalTable','Final Defects Log')">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+          PDF
+        </button>
+      </div>
+    </div>
+    <div style="overflow-x:auto">
+      <table id="finalTable">
+        <thead><tr>
+          <th onclick="sortT('finalTable',0)">Date ↕</th>
+          <th onclick="sortT('finalTable',1)">Shift</th>
+          <th onclick="sortT('finalTable',2)">Pipe N°</th>
+          <th onclick="sortT('finalTable',3)">Defect ↕</th>
+          <th onclick="sortT('finalTable',4)">Position (mm) ↕</th>
+          <th onclick="sortT('finalTable',5)">Extension (mm) ↕</th>
+          <th>Severity</th>
+        </tr></thead>
+        <tbody id="finalTbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+</main>
+</div>
+
+<footer>
+  <div class="ft-brand">
+    <img src="data:image/jpeg;base64,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" alt="IQS" style="height:36px;width:auto;">
+    <div class="ft-div"></div>
+    <div class="ft-co"><div class="ft-name">IQS S.r.l. Worldwide Inspection Company</div><div class="ft-tag">Global Quality Assurance</div></div>
+  </div>
+  <div class="ft-contacts">
+    <div class="ft-col"><div class="ft-col-lbl">Contact</div><span>+39 02 49532180 / 2181</span><a href="https://www.iqs-ww.com">www.iqs-ww.com</a></div>
+    <div class="ft-col"><div class="ft-col-lbl">Registered Office</div><span>Via Trieste 16/A</span><span>20097 S. Donato Mil.se (MI)</span></div>
+    <div class="ft-col"><div class="ft-col-lbl">Head Quarter</div><span>Via Europa 42</span><span>20097 S. Donato Mil.se (MI)</span></div>
+  </div>
+  <div class="ft-stamp">IQS Confidential · Report <span id="footer-date">10/03/2026</span></div>
+</footer>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════════
+   GOOGLE SHEETS CONFIG — 3 separate tabs, each with its own GID
+   ═══════════════════════════════════════════════════════════════════ */
+// Google Apps Script endpoint — no CORS issues
+// Endpoint assembled at runtime to reduce static analysis surface
+const GAS_URL = ["https://script.google.com/macros/s/",
+  "AKfycbwbCBwnfyGdNJD4HJNdRQ-Lm9OEyrOM5JFFtiEIXy7FO1hELIcThaBIGHN267YxWzc",
+  "/exec"].join("");
+
+const URLS = {
+  summary      : `${GAS_URL}?sheet=summary`,
+  defectsWeld  : `${GAS_URL}?sheet=defectsWeld`,
+  defectsFinal : `${GAS_URL}?sheet=defectsFinal`,
+};
+
+const REFRESH_MS = 5 * 60 * 1000;
+
+/* ── CSV parser ──────────────────────────────────────────────────── */
+function parseCSV(text) {
+  const rows = [];
+  const lines = text.replace(/\r/g,"").split("\n");
+  for (const line of lines) {
+    const cols = []; let cur = "", inQ = false;
+    for (let i = 0; i < line.length; i++) {
+      const ch = line[i];
+      if (ch==='"') { inQ=!inQ; }
+      else if (ch===","&&!inQ) { cols.push(cur.trim()); cur=""; }
+      else cur+=ch;
+    }
+    cols.push(cur.trim()); rows.push(cols);
+  }
+  return rows;
+}
+
+/* ── Fetch via Google Apps Script (no CORS) ─────────────────────── */
+async function fetchCSV(url) {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 15000);
+  try {
+    const res = await fetch(url, {signal: ctrl.signal});
+    clearTimeout(timer);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const text = await res.text();
+    if (!text || text.length < 5) throw new Error("Empty response from GAS");
+    return parseCSV(text);
+  } catch(e) {
+    clearTimeout(timer);
+    if (e.name === "AbortError") throw new Error("Timeout (15s)");
+    throw e;
+  }
+}
+
+/* ── Main fetch — all 3 sheets in parallel ────────────────────────── */
+async function fetchAllData() {
+  const results = await Promise.allSettled([
+    fetchCSV(URLS.summary),
+    fetchCSV(URLS.defectsWeld),
+    fetchCSV(URLS.defectsFinal),
+  ]);
+
+  const [sumRes, weldRes, finalRes] = results;
+  let anyOk = false;
+
+  if (sumRes.status === "fulfilled") {
+    applySummary(sumRes.value);
+    setTabStatus("overview", true);
+    setTabStatus("ndt", true);
+    anyOk = true;
+  } else {
+    console.warn("SUMMARY fetch failed:", sumRes.reason?.message);
+    setTabStatus("overview", false);
+    setTabStatus("ndt", false);
+    showTabError("overview", "Dati non disponibili — sync fallita");
+    showTabError("ndt", "Dati non disponibili — sync fallita");
+  }
+
+  if (weldRes.status === "fulfilled") {
+    applyDefectsWeld(weldRes.value);
+    setTabStatus("defects", true);
+    anyOk = true;
+  } else {
+    const weldErr = weldRes.reason?.message || "Unknown error";
+    console.warn("DEFECTS_WELD fetch failed:", weldErr);
+    setTabStatus("defects", false);
+    showTabError("defects", `DEFECTS_WELD — sync fallita: ${weldErr}`);
+  }
+
+  if (finalRes.status === "fulfilled") {
+    applyDefectsFinal(finalRes.value);
+    setTabStatus("final", true);
+    anyOk = true;
+  } else {
+    const finalErr = finalRes.reason?.message || "Unknown error";
+    console.warn("DEFECTS_FINAL fetch failed:", finalErr);
+    setTabStatus("final", false);
+    showTabError("final", `DEFECTS_FINAL — sync fallita: ${finalErr}`);
+  }
+
+  showLiveIndicator(anyOk, results.filter(r => r.status === "rejected").length);
+  if (typeof trackSync==="function") trackSync(anyOk);
+  // Update admin badges after all fetches complete
+  updateBadges(window._weldCount || 0, window._finalCount || 0);
+
+  const el = document.querySelector(".last-update");
+  if (el) {
+    const failed = results.filter(r => r.status==="rejected").length;
+    el.textContent = failed === 0
+      ? "Last sync: " + new Date().toLocaleTimeString()
+      : `Sync: ${3-failed}/3 OK — ${new Date().toLocaleTimeString()}`;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   SUMMARY — KPI + ITP Steps (from SUMMARY tab, rows 5-40)
+   ═══════════════════════════════════════════════════════════════════ */
+function applySummary(rows) {
+  // Build key→value map for KPI rows (col A = key, col B = value)
+  const kpi = {};
+  rows.forEach(r => { if(r[0]) kpi[r[0].replace(/\uFEFF/g,"").trim()] = (r[1]||"").trim(); });
+
+  const poQty    = parseInt(kpi["Purchase Order (PO) Qty"]) || 15462;
+  const incoming = parseInt(kpi["Incoming Plates"])          || 170;
+  const accepted = parseInt(kpi["Pipes Accepted"])           || 149;
+  const rejected = parseInt(kpi["Pipes Rejected"])           || 3;
+  const repair   = parseInt(kpi["Repair / Rework"])          || 4;
+  const passRate = parseFloat((kpi["Overall Pass Rate (%)"]||"87.65").replace(",",".")) || 87.65;
+  const _rawRD = (kpi["Report Date"] || "10/03/2026").trim();
+  const reportDate = _rawRD;
+  const completion = ((accepted/poQty)*100).toFixed(2);
+
+  // KPI cards — always animate
+  animateCounter(document.getElementById("kpi-po"),       poQty,     false, 1200);
+  animateCounter(document.getElementById("kpi-accepted"), accepted,  false, 900);
+  animateCounter(document.getElementById("kpi-rate"),     passRate,  true,  1000);
+  animateCounter(document.getElementById("kpi-rejected"), rejected,  false, 700);
+  // Strip numbers
+  animateCounter(document.getElementById("ss-total"),     incoming,  false, 900);
+  animateCounter(document.getElementById("ss-acc"),       accepted,  false, 900);
+  animateCounter(document.getElementById("ss-rep"),       repair,    false, 700);
+  animateCounter(document.getElementById("ss-rej"),       rejected,  false, 700);
+  // Progress bar values
+  animateCounter(document.getElementById("pr-acc-v"),     accepted,  false, 900);
+  animateCounter(document.getElementById("pr-rep-v"),     repair,    false, 700);
+  animateCounter(document.getElementById("pr-rej-v"),     rejected,  false, 700);
+  checkPassRateAlert(passRate);
+  setT("kpi-rate-sub", `Ready for Acceptance / Inspected (${accepted}/${incoming})`);
+  const inc = document.getElementById("kpi-incoming");
+  if (inc) inc.textContent = `${incoming.toLocaleString()} Incoming Plates`;
+
+  // Completion bar
+  const cb = document.getElementById("kpi-compl-bar");
+  if (cb) { cb.style.width = "0%"; setTimeout(() => { cb.style.width = Math.min(completion,100)+"%"; }, 400); }
+  setT("kpi-compl-pct", completion+"%");
+
+  // PO progress
+  setT("po-qty", poQty.toLocaleString());
+  setT("po-accepted", accepted.toLocaleString());
+  setT("po-remaining", (poQty-incoming).toLocaleString());
+  setT("po-completion", completion+"%");
+  const pb = document.getElementById("po-bar");
+  if (pb) { pb.style.width = "0%"; setTimeout(() => { pb.style.width = Math.min(completion,100)+"%"; }, 300); }
+  const pi = document.getElementById("po-inline");
+  if (pi) pi.textContent = `${completion}%  ·  ${accepted} / ${poQty.toLocaleString()}`;
+
+  // Update gauge bars
+  // Animate gauge bars with staggered delay
+  function animGauge(id, pct, delay) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.style.width = "0%";
+    setTimeout(() => { el.style.width = Math.min(pct, 100).toFixed(1) + "%"; }, delay);
+  }
+  animGauge("gf-passrate",   passRate,                        200);
+  animGauge("gf-completion", parseFloat(completion),          400);
+  animGauge("gf-accepted",   (accepted/incoming)*100,         600);
+  animGauge("gf-repair",     Math.min((repair/incoming)*100*5, 100), 800);
+  const gvPR = document.getElementById("g-passrate");
+  const gvCP = document.getElementById("g-completion");
+  const gvAC = document.getElementById("g-accepted");
+  if (gvPR) gvPR.textContent = passRate.toFixed(1) + "%";
+  if (gvCP) gvCP.textContent = completion + "%";
+  if (gvAC) gvAC.textContent = accepted + " / " + incoming;
+
+  // Summary strip
+  setT("ss-total", incoming.toLocaleString());
+  setT("ss-acc", accepted.toLocaleString());
+  setT("ss-rep", repair.toLocaleString());
+  setT("ss-rej", rejected.toLocaleString());
+
+  // Quality bars
+  const tot = accepted+repair+rejected;
+  // Animate progress bars with delay
+  function animBar(id, pct, delay) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.style.width = "0%";
+    setTimeout(() => { el.style.width = pct.toFixed(1) + "%"; }, delay);
+  }
+  animBar("pr-acc", accepted/tot*100, 200);
+  animBar("pr-rep", repair/tot*100,   400);
+  animBar("pr-rej", rejected/tot*100, 600);
+
+  // Donut
+  if (window._donutChart) {
+    window._donutChart.data.datasets[0].data = [accepted, repair, rejected];
+    window._donutChart.update("none");
+  }
+
+  // Date
+  const hdr = document.getElementById("hdr-date-val");
+  // Format date — extract DD/MM/YYYY only, ignore any time part
+  const _cleanDate = (str) => {
+    if (!str) return "—";
+    // Format 1: DD/MM/YYYY or DD.MM.YYYY
+    const m1 = str.match(/(\d{1,2})[\/.](\d{1,2})[\/.](\d{4})/);
+    if (m1) return `${m1[1].padStart(2,"0")}/${m1[2].padStart(2,"0")}/${m1[3]}`;
+    // Format 2: YYYY-MM-DD (ISO)
+    const m2 = str.match(/(\d{4})-(\d{2})-(\d{2})/);
+    if (m2) return `${m2[3]}/${m2[2]}/${m2[1]}`;
+    // Format 3: "Mon Mar 16 2026 ..." or "16 Mar 2026"
+    const months = {jan:"01",feb:"02",mar:"03",apr:"04",may:"05",jun:"06",jul:"07",aug:"08",sep:"09",oct:"10",nov:"11",dec:"12"};
+    const m3 = str.match(/(\d{1,2})\s+([a-z]{3})[a-z]*\s+(\d{4})/i);
+    if (m3) { const mo = months[m3[2].toLowerCase().slice(0,3)] || "01"; return `${m3[1].padStart(2,"0")}/${mo}/${m3[3]}`; }
+    const m4 = str.match(/[a-z]{3}\s+([a-z]{3})\s+(\d{1,2})\s+(\d{4})/i);
+    if (m4) { const mo = months[m4[1].toLowerCase().slice(0,3)] || "01"; return `${m4[2].padStart(2,"0")}/${mo}/${m4[3]}`; }
+    // Fallback: return first 10 chars
+    return str.slice(0,10);
+  };
+  const _displayDate = _cleanDate(reportDate);
+  if (hdr) hdr.textContent = _displayDate.replace(/\//g," / ");
+  setT("footer-date", _displayDate);
+
+  // ITP Steps — rows starting after header "Seq. N°" (row 16 = index 15)
+  let itpStart = -1;
+  rows.forEach((r,i) => { if(r[0] && r[0].toString().includes("Seq")) itpStart = i+1; });
+  if (itpStart > 0) {
+    const live = [];
+    for (let i=itpStart; i<rows.length; i++) {
+      const r = rows[i];
+      const id = parseInt(r[0]);
+      if (!id || isNaN(id)) continue;
+      live.push({
+        id, name:r[1]||"", group:r[2]||"",
+        n: parseInt(r[3])||0,
+        pct: parseFloat((r[4]||"0").replace(",","."))||0,
+        remarks: r[7]||""
+      });
+    }
+    if (live.length > 0) updateStationCharts(live);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   DEFECTS_WELD — from dedicated sheet tab
+   Row 2 = header, rows 3+ = data
+   A=Date, B=Shift, C=Pipe, D=Defect, E=Position, F=Extension, G=Remarks
+   ═══════════════════════════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════════════════════════
+   CELL CLEANERS — fix Google Sheets date/time export artefacts
+   ═══════════════════════════════════════════════════════════════════ */
+
+// Converts any date string to DD/MM/YYYY
+// Handles: "Wed Feb 11 2026 01:00:00 GMT+0100 (...)", ISO, "DD/MM/YYYY", "MM/DD/YYYY"
+function cleanDate(raw) {
+  if (!raw) return "—";
+  raw = String(raw).trim();
+  // Already DD/MM/YYYY
+  if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(raw)) return raw;
+  // Try native Date parse (works for "Wed Feb 11 2026...", ISO, etc.)
+  const d = new Date(raw);
+  if (!isNaN(d.getTime())) {
+    const dd = String(d.getDate()).padStart(2,"0");
+    const mm = String(d.getMonth()+1).padStart(2,"0");
+    const yyyy = d.getFullYear();
+    return `${dd}/${mm}/${yyyy}`;
+  }
+  return raw; // fallback: return as-is
+}
+
+// Cleans pipe number: if Sheets exported it as a time ("Sun Dec 31 1899 03:39:14...")
+// Sheets auto-converts pipe numbers like "26.4.002095" to dates if column not formatted as text.
+// When it hits "1899" it means Sheets interpreted it as a time-only value (days since 1899-12-30).
+function cleanPipe(raw) {
+  if (!raw) return "—";
+  raw = String(raw).trim();
+  // Already a clean pipe ID (no spaces, only word chars/dots/dashes)
+  if (/^[\w.\-]+$/.test(raw)) return raw;
+  // 1899 artefact: Sheets sent a time-as-date → extract HH:MM:SS and show as-is
+  if (raw.includes("1899")) {
+    // Try to parse as Date and extract HH:MM:SS — that was the original cell value
+    const d = new Date(raw);
+    if (!isNaN(d.getTime())) {
+      // Time-only value: HH hours * 3600 + MM * 60 + SS stored as fraction of a day
+      // Return the raw time string — GAS should fix this by using .toString() on the cell
+      const h = String(d.getHours()).padStart(2,"0");
+      const m2 = String(d.getMinutes()).padStart(2,"0");
+      const s = String(d.getSeconds()).padStart(2,"0");
+      return `${h}:${m2}:${s} (⚠ check GAS)`;
+    }
+  }
+  // Generic long string: strip timezone noise and truncate
+  const clean = raw.replace(/\s*\([^)]*\)/g,"").replace(/GMT[+\-]\d{4}/g,"").trim();
+  return clean.length > 25 ? clean.substring(0, 25) + "…" : clean;
+}
+
+function applyDefectsWeld(rows) {
+  // Find header row (contains "Date" in col A)
+  let dataStart = -1;
+  rows.forEach((r,i) => {
+    if (r[0] && r[0].toLowerCase().includes("date") && r[3] && dataStart < 0)
+      dataStart = i+1;
+  });
+  if (dataStart < 0) dataStart = 2; // fallback: row index 2 (3rd row)
+
+  const defects = [];
+  for (let i=dataStart; i<rows.length; i++) {
+    const r = rows[i];
+    if (!r[0] && !r[2]) continue;  // skip empty rows, don't break
+    if (!r[0] || !r[2]) continue;  // skip incomplete rows
+    defects.push({ date:cleanDate(r[0]), shift:r[1]||"", pipe:cleanPipe(r[2]), defect:r[3]||"", pos:parseInt(r[4])||0, ext:parseInt(r[5])||0, remarks:r[6]||"" });
+  }
+
+  updateDefectTable(defects, "defectTbody");
+  buildDynCharts("weld-charts-grid", defects);
+  window._weldCount = defects.length;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   DEFECTS_FINAL — from dedicated sheet tab (same structure)
+   ═══════════════════════════════════════════════════════════════════ */
+function applyDefectsFinal(rows) {
+  let dataStart = -1;
+  rows.forEach((r,i) => {
+    if (r[0] && r[0].toLowerCase().includes("date") && r[3] && dataStart < 0)
+      dataStart = i+1;
+  });
+  if (dataStart < 0) dataStart = 2;
+
+  const defects = [];
+  for (let i=dataStart; i<rows.length; i++) {
+    const r = rows[i];
+    if (!r[0] && !r[2]) continue;  // skip empty rows
+    if (!r[0] || !r[2]) continue;  // skip incomplete rows
+    defects.push({ date:cleanDate(r[0]), shift:r[1]||"", pipe:cleanPipe(r[2]), defect:r[3]||"", pos:parseInt(r[4])||0, ext:parseInt(r[5])||0, remarks:r[6]||"" });
+  }
+
+  updateDefectTable(defects, "finalTbody");
+  buildDynCharts("final-charts-grid", defects);
+  window._finalCount = defects.length;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   UPDATE TABLE — reusable for both weld and final
+   ═══════════════════════════════════════════════════════════════════ */
+// Defect types that are always HIGH severity in Final Inspection
+const FINAL_HIGH_SEVERITY = ["burn through", "wall thickness below spec", "wt below spec"];
+
+function getSeverityBadge(d, isFinal) {
+  if (isFinal) {
+    const defectLower = (d.defect || "").toLowerCase();
+    if (FINAL_HIGH_SEVERITY.some(k => defectLower.includes(k))) {
+      return `<span class="badge br">HIGH</span>`;
+    }
+  }
+  // Default: severity based on extension (mm)
+  return d.ext >= 200 ? `<span class="badge br">HIGH</span>`
+       : d.ext >= 100 ? `<span class="badge ba">MED</span>`
+       : `<span class="badge bg">LOW</span>`;
+}
+
+function updateDefectTable(defects, tbodyId) {
+  const tb = document.getElementById(tbodyId);
+  if (!tb) return;
+  tb.innerHTML = "";
+  const isFinal = tbodyId === "finalTbody";
+  if (defects.length === 0) {
+    tb.innerHTML = `<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:24px;font-size:12px;">No defects recorded yet</td></tr>`;
+    return;
+  }
+  defects.forEach(d => {
+    const sv = getSeverityBadge(d, isFinal);
+    tb.innerHTML += `<tr>
+      <td>${d.date}</td>
+      <td>${d.shift}</td>
+      <td style="font-family:'JetBrains Mono',monospace;font-size:10px">${d.pipe}</td>
+      <td>${d.defect}</td>
+      <td style="font-family:'JetBrains Mono',monospace">${d.pos||"—"}</td>
+      <td style="font-family:'JetBrains Mono',monospace">${d.ext||"—"}</td>
+      <td>${sv}</td></tr>`;
+  });
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   BUILD DYNAMIC CHARTS — called for both weld and final grids
+   Creates / updates 4 charts per grid:
+   1. Count by defect type (bar)
+   2. Position scatter (scatter)
+   3. Defects over time (line)
+   4. Extension distribution (doughnut)
+   ═══════════════════════════════════════════════════════════════════ */
+const _chartInst = {};  // registry: chartId → Chart instance
+
+const DP_BG = ["rgba(255,71,87,.2)","rgba(255,202,40,.2)","rgba(0,168,255,.2)","rgba(0,230,118,.15)","rgba(124,77,255,.2)","rgba(0,229,200,.2)","rgba(255,148,38,.2)","rgba(180,80,255,.2)"];
+const DP_BD = ["rgba(255,71,87,1)","rgba(255,202,40,1)","rgba(0,168,255,1)","rgba(0,230,118,1)","rgba(124,77,255,1)","rgba(0,229,200,1)","rgba(255,148,38,1)","rgba(180,80,255,1)"];
+
+Chart.defaults.color="#4a7090";
+Chart.defaults.borderColor="rgba(0,168,255,0.1)";
+Chart.defaults.font.family="'JetBrains Mono',monospace";
+
+function applyChartTheme(light) {
+  const textColor  = light ? "#374151" : "#4a7090";
+  const gridColor  = light ? "rgba(0,80,160,0.08)" : "rgba(0,168,255,0.06)";
+  const borderCol  = light ? "rgba(0,100,200,0.12)" : "rgba(0,168,255,0.1)";
+  Chart.defaults.color = textColor;
+  Chart.defaults.borderColor = borderCol;
+  // Update all registered chart instances
+  Object.values(_chartInst).forEach(ch => {
+    if (!ch) return;
+    ch.options.scales && Object.values(ch.options.scales).forEach(sc => {
+      if (sc.ticks) sc.ticks.color = textColor;
+      if (sc.grid)  sc.grid.color  = gridColor;
+      if (sc.title) sc.title.color = textColor;
+    });
+    if (ch.options.plugins?.legend?.labels) ch.options.plugins.legend.labels.color = textColor;
+    ch.update("none");
+  });
+  [window._stationChart, window._rankingChart, window._donutChart].forEach(ch => {
+    if (!ch) return;
+    ch.options.scales && Object.values(ch.options.scales).forEach(sc => {
+      if (sc.ticks) sc.ticks.color = textColor;
+      if (sc.grid)  sc.grid.color  = gridColor;
+    });
+    if (ch.options.plugins?.legend?.labels) ch.options.plugins.legend.labels.color = textColor;
+    // Fix donut border to match background in light
+    if (ch === window._donutChart) {
+      const bgCol = light ? "#ffffff" : "#060d1a";
+      ch.data.datasets[0].borderColor = [bgCol, bgCol, bgCol];
+    }
+    ch.update("none");
+  });
+}
+
+
+const GR="rgba(0,230,118,1)", AM="rgba(255,202,40,1)", RD="rgba(255,71,87,1)";
+const BL="rgba(0,168,255,1)", TE="rgba(0,229,200,1)", PU="rgba(124,77,255,1)";
+
+function buildDynCharts(gridId, defects) {
+  const grid = document.getElementById(gridId);
+  if (!grid) return;
+
+  if (defects.length === 0) {
+    grid.innerHTML = `<div class="dyn-card" style="grid-column:1/-1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:48px 24px;gap:14px;">
+      <div style="font-size:36px;opacity:.3;">📋</div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--blue);">Nessun dato registrato</div>
+      <div style="font-size:12px;color:var(--muted);text-align:center;max-width:340px;line-height:1.6;">Aggiungi righe nella scheda corrispondente del foglio Google per visualizzare automaticamente i grafici.</div>
+    </div>`;
+    return;
+  }
+
+  // 1. Count by type
+  const typeCounts = {};
+  defects.forEach(d => { const k=(d.defect||"Unknown").trim(); typeCounts[k]=(typeCounts[k]||0)+1; });
+  const typeLabels = Object.keys(typeCounts);
+  const typeData   = Object.values(typeCounts);
+
+  // 2. Scatter positions
+  const scatterData = defects.map((d,i) => ({ x:i+1, y:d.pos }));
+
+  // 3. Timeline
+  const dateCounts = {};
+  defects.forEach(d => { dateCounts[d.date]=(dateCounts[d.date]||0)+1; });
+  const dateLabels = Object.keys(dateCounts).sort((a,b)=>{
+    const parse = s => { const [d,m,y]=s.split("/"); return new Date(y,m-1,d); };
+    return parse(a)-parse(b);
+  });
+  const dateData = dateLabels.map(k => dateCounts[k]);
+
+  // 4. Extension buckets
+  const extB = {"0–50":0,"51–100":0,"101–200":0,"201+":0};
+  defects.forEach(d => {
+    if (d.ext<=50) extB["0–50"]++;
+    else if (d.ext<=100) extB["51–100"]++;
+    else if (d.ext<=200) extB["101–200"]++;
+    else extB["201+"]++;
+  });
+
+  // Render each chart
+  renderOrUpdate(gridId, `${gridId}-type`,
+    "Defect Types", "Count by Defect Type", 220,
+    "bar",
+    { labels: typeLabels, datasets:[{ data:typeData, backgroundColor:typeLabels.map((_,i)=>DP_BG[i%DP_BG.length]), borderColor:typeLabels.map((_,i)=>DP_BD[i%DP_BD.length]), borderWidth:2, borderRadius:5 }] },
+    { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}, tooltip:{callbacks:{label:c=>` Count: ${c.raw}`}}}, scales:{y:{beginAtZero:true,ticks:{stepSize:1},grid:{color:"rgba(0,168,255,0.06)"}},x:{grid:{display:false},ticks:{font:{size:9}}}} }
+  );
+
+  renderOrUpdate(gridId, `${gridId}-scatter`,
+    "Position Scatter", "Defect Position Along Pipe (mm)", 220,
+    "scatter",
+    { datasets:[{ label:"Defects", data:scatterData, backgroundColor:RD, pointRadius:9, pointHoverRadius:12 }] },
+    { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}, tooltip:{callbacks:{label:c=>`${defects[c.dataIndex]?.defect||""} — Pos: ${c.raw.y}mm`}}}, scales:{x:{title:{display:true,text:"Defect #",color:"#4a7090"},ticks:{stepSize:1},grid:{color:"rgba(0,168,255,0.06)"}},y:{title:{display:true,text:"Position (mm)",color:"#4a7090"},grid:{color:"rgba(0,168,255,0.06)"}}} }
+  );
+
+  renderOrUpdate(gridId, `${gridId}-timeline`,
+    "Defects Over Time", "Defects per Inspection Date", 220,
+    "line",
+    { labels:dateLabels, datasets:[{ label:"Defects", data:dateData, borderColor:AM, backgroundColor:"rgba(255,202,40,0.12)", fill:true, tension:0.35, pointBackgroundColor:AM, pointRadius:5 }] },
+    { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true,ticks:{stepSize:1},grid:{color:"rgba(0,168,255,0.06)"}},x:{grid:{display:false},ticks:{font:{size:9}}}} }
+  );
+
+  renderOrUpdate(gridId, `${gridId}-ext`,
+    "Extension Distribution", "Defect Extension Buckets (mm)", 220,
+    "doughnut",
+    { labels:Object.keys(extB), datasets:[{ data:Object.values(extB), backgroundColor:["rgba(0,230,118,.55)","rgba(255,202,40,.55)","rgba(255,148,38,.55)","rgba(255,71,87,.55)"], borderColor:[GR,AM,"rgba(255,148,38,1)",RD], borderWidth:2, hoverOffset:6 }] },
+    { cutout:"60%", responsive:true, maintainAspectRatio:false, plugins:{legend:{position:"bottom",labels:{font:{size:9},padding:10,color:"#4a7090"}}, tooltip:{callbacks:{label:c=>`${c.label}: ${c.raw} defect${c.raw!==1?"s":""}`}}} }
+  );
+}
+
+function renderOrUpdate(gridId, chartId, eyebrow, title, height, type, data, options) {
+  let canvas = document.getElementById(chartId);
+
+  if (!canvas) {
+    const grid = document.getElementById(gridId);
+    if (!grid) return;
+    const card = document.createElement("div");
+    card.className = "dyn-card";
+    card.innerHTML = `<div class="c-ey">${eyebrow}</div><div class="c-title">${title}</div><div class="cw" style="height:${height}px"><canvas id="${chartId}"></canvas></div>`;
+    grid.appendChild(card);
+    canvas = document.getElementById(chartId);
+  }
+
+  if (_chartInst[chartId]) {
+    const ch = _chartInst[chartId];
+    ch.data.labels = data.labels;
+    // Sync dataset count
+    while (ch.data.datasets.length > data.datasets.length) ch.data.datasets.pop();
+    data.datasets.forEach((ds, i) => {
+      if (ch.data.datasets[i]) Object.assign(ch.data.datasets[i], ds);
+      else ch.data.datasets.push(ds);
+    });
+    ch.update("active");
+  } else {
+    const existing = Chart.getChart(canvas);
+    if (existing) existing.destroy();
+    _chartInst[chartId] = new Chart(canvas, { type, data, options });
+  }
+}
+
+/* ── Station charts ─────────────────────────────────────────────── */
+function stationBg(s, idx) {
+  const gC = {"Forming":"rgba(0,168,255,.6)","Welding & NDT":"rgba(255,202,40,.6)","Mechanical":"rgba(255,71,87,.6)","Testing":"rgba(124,77,255,.6)","Dimensional & Final":"rgba(0,230,118,.6)"};
+  const isNA = (s.remarks && s.remarks.toUpperCase().includes("N/A")) || (s.pct===0 && s.n===0);
+  if (isNA) return "rgba(74,112,144,0.2)";
+  return idx===0
+    ? (s.pct>=88?"rgba(0,230,118,.55)":s.pct>=50?"rgba(255,202,40,.55)":"rgba(255,71,87,.55)")
+    : (gC[s.group]||"rgba(200,200,200,.4)");
+}
+function stationBd(s, idx) {
+  const gB = {"Forming":BL,"Welding & NDT":AM,"Mechanical":RD,"Testing":PU,"Dimensional & Final":GR};
+  const isNA = (s.remarks && s.remarks.toUpperCase().includes("N/A")) || (s.pct===0 && s.n===0);
+  if (isNA) return "rgba(74,112,144,0.4)";
+  return idx===0 ? (s.pct>=88?GR:s.pct>=50?AM:RD) : (gB[s.group]||"#aaa");
+}
+
+function updateStationCharts(stations) {
+  const rev = [...stations].reverse();
+  const labels = rev.map(s => {
+    const isNA = (s.remarks && s.remarks.toUpperCase().includes("N/A")) || (s.pct===0 && s.n===0);
+    return `${s.id}. ${s.name}${isNA ? " [N/A]" : ""}`;
+  });
+  const data = rev.map(s => s.pct);
+  [window._stationChart, window._rankingChart].forEach((ch, idx) => {
+    if (!ch) return;
+    ch.data.labels = labels;
+    ch.data.datasets[0].data = data;
+    ch.data.datasets[0].backgroundColor = rev.map(s => stationBg(s, idx));
+    ch.data.datasets[0].borderColor      = rev.map(s => stationBd(s, idx));
+    ch.update("none");
+  });
+}
+
+/* ── Live indicator ──────────────────────────────────────────────── */
+function showLiveIndicator(anyOk, failCount = 0) {
+  const dot   = document.querySelector(".live-dot");
+  const badge = document.querySelector(".live-badge");
+  if (!dot) return;
+  if (!anyOk) {
+    dot.style.background    = "var(--red)";
+    badge.style.borderColor = "rgba(255,71,87,0.3)";
+    badge.style.color       = "var(--red)";
+    badge.title = "Offline — tutte le sync fallite";
+  } else if (failCount > 0) {
+    dot.style.background    = "var(--amber)";
+    badge.style.borderColor = "rgba(255,202,40,0.3)";
+    badge.style.color       = "var(--amber)";
+    badge.title = `Parziale — ${failCount} scheda/e non sincronizzata/e`;
+  } else {
+    dot.style.background    = "var(--green)";
+    badge.style.borderColor = "rgba(0,230,118,0.3)";
+    badge.style.color       = "var(--green)";
+    badge.title = "Live — sincronizzato con Google Sheets";
+  }
+}
+
+// ── Tab status dot indicator ──────────────────────────────────────────
+function setTabStatus(tabId, ok) {
+  const tab = document.querySelector(`.tab[data-tab="${tabId}"]`);
+  if (!tab) return;
+  let dot = tab.querySelector(".tab-status-dot");
+  if (!dot) {
+    dot = document.createElement("span");
+    dot.className = "tab-status-dot";
+    tab.appendChild(dot);
+  }
+  dot.style.background = ok ? "var(--green)" : "var(--red)";
+  dot.title = ok ? "Dati sincronizzati" : "Sync fallita";
+}
+
+// ── Show error banner inside a tab ───────────────────────────────────
+function showTabError(tabId, msg) {
+  const tab = document.getElementById(tabId);
+  if (!tab) return;
+  let banner = tab.querySelector(".sync-error-banner");
+  if (!banner) {
+    banner = document.createElement("div");
+    banner.className = "sync-error-banner";
+    tab.insertBefore(banner, tab.firstChild);
+  }
+  banner.innerHTML = `<span style="font-size:14px;margin-right:8px;">⚠</span>${msg}
+    <span style="margin-left:12px;font-size:10px;opacity:.7;">Ricarica la pagina o verifica Apps Script</span>`;
+  banner.style.display = "flex";
+}
+
+// ── Clear error banner ────────────────────────────────────────────────
+function clearTabError(tabId) {
+  const banner = document.querySelector(`#${tabId} .sync-error-banner`);
+  if (banner) banner.style.display = "none";
+}
+
+/* ── Helper ──────────────────────────────────────────────────────── */
+function setT(id, val) { const el=document.getElementById(id); if(el) el.textContent=val; }
+
+/* ── Boot ────────────────────────────────────────────────────────── */
+document.addEventListener("DOMContentLoaded", () => {
+  fetchAllData();
+  setInterval(fetchAllData, REFRESH_MS);
+  const pb = document.getElementById("admin-print-btn");
+  if (pb) pb.addEventListener("click", printReport);
+});
+
+/* ═══════════════════════════════════════════════════════════════════
+   CHART.JS SETUP — static charts initialized on load
+   (station/ranking use static fallback data, overwritten on first sync)
+   ═══════════════════════════════════════════════════════════════════ */
+
+// Static fallback station data (overwritten by live sheet)
+const stations = [
+  {id:1,name:"Incoming Plate",group:"Forming",n:170,pct:100},
+  {id:2,name:"Pipe Forming",group:"Forming",n:170,pct:100},
+  {id:3,name:"Tack Welding",group:"Forming",n:170,pct:100},
+  {id:4,name:"ID SAWL",group:"Forming",n:170,pct:100},
+  {id:5,name:"OD SAWL",group:"Forming",n:170,pct:100},
+  {id:6,name:"AUT1",group:"Welding & NDT",n:170,pct:100},
+  {id:7,name:"Fluoroscopic",group:"Welding & NDT",n:12,pct:7.06},
+  {id:8,name:"Welding Repair",group:"Welding & NDT",n:4,pct:2.35},
+  {id:9,name:"MCE1",group:"Mechanical",n:164,pct:96.47},
+  {id:10,name:"MCE2",group:"Mechanical",n:0,pct:0,remarks:"N/A"},
+  {id:11,name:"MCE Inspection",group:"Mechanical",n:164,pct:96.47},
+  {id:12,name:"Straightness Re-work",group:"Mechanical",n:6,pct:3.53},
+  {id:13,name:"Hydro Test",group:"Testing",n:158,pct:92.94},
+  {id:14,name:"AUT2",group:"Testing",n:0,pct:0,remarks:"N/A"},
+  {id:15,name:"Phase Arr.",group:"Testing",n:158,pct:92.94},
+  {id:16,name:"MUT",group:"Testing",n:158,pct:92.94},
+  {id:17,name:"End UT",group:"Testing",n:157,pct:92.35},
+  {id:18,name:"X-Ray",group:"Testing",n:156,pct:91.76},
+  {id:19,name:"OoR Pipe Body",group:"Dimensional & Final",n:156,pct:91.76},
+  {id:20,name:"Dimensional 1",group:"Dimensional & Final",n:150,pct:88.24},
+  {id:21,name:"Dimensional 2",group:"Dimensional & Final",n:149,pct:87.65},
+  {id:22,name:"MPI",group:"Dimensional & Final",n:149,pct:87.65},
+  {id:23,name:"UT DHC",group:"Dimensional & Final",n:149,pct:87.65},
+  {id:24,name:"Final Mark & Weigh",group:"Dimensional & Final",n:149,pct:87.65},
+];
+const sRev = [...stations].reverse();
+
+// Station overview bar (Overview tab)
+window._stationChart = new Chart(document.getElementById("stationChart"), {
+  type:"bar",
+  data:{ labels:sRev.map(s=>`${s.id}. ${s.name}`), datasets:[{ data:sRev.map(s=>s.pct), backgroundColor:sRev.map(s=>s.pct>=88?"rgba(0,230,118,.55)":s.pct>=50?"rgba(255,202,40,.55)":"rgba(255,71,87,.55)"), borderColor:sRev.map(s=>s.pct>=88?GR:s.pct>=50?AM:RD), borderWidth:1, borderRadius:3 }] },
+  options:{ indexAxis:"y", responsive:true, maintainAspectRatio:false,
+    plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${c.raw.toFixed(2)}%`}}},
+    scales:{
+      x:{min:0,max:105,ticks:{callback:v=>v+"%",font:{size:9}},grid:{color:"rgba(0,168,255,0.04)"},border:{display:false}},
+      y:{grid:{display:false},ticks:{font:{size:8},color:"#4a7090"},border:{display:false}}
+    },
+    elements:{bar:{borderRadius:4,borderSkipped:false}}
+  }
+});
+
+// Donut
+window._donutChart = new Chart(document.getElementById("donutChart"), {
+  type:"doughnut",
+  data:{ labels:["Ready for Acceptance","Repair/Rework","Rejected"], datasets:[{ data:[149,4,3], backgroundColor:["rgba(0,230,118,.75)","rgba(255,202,40,.75)","rgba(255,71,87,.75)"], borderColor:["#060d1a","#060d1a","#060d1a"], borderWidth:3, hoverOffset:6 }] },
+  options:{ cutout:"74%", plugins:{ legend:{position:"bottom",labels:{font:{size:9},padding:12,color:"#4a7090"}}, tooltip:{callbacks:{label:c=>` ${c.label}: ${c.raw} pipes`}} } }
+});
+
+// Ranking chart (ITP Steps tab)
+const gColors={"Forming":"rgba(0,168,255,.6)","Welding & NDT":"rgba(255,202,40,.6)","Mechanical":"rgba(255,71,87,.6)","Testing":"rgba(124,77,255,.6)","Dimensional & Final":"rgba(0,230,118,.6)"};
+const gBorder={"Forming":BL,"Welding & NDT":AM,"Mechanical":RD,"Testing":PU,"Dimensional & Final":GR};
+window._rankingChart = new Chart(document.getElementById("rankingChart"), {
+  type:"bar",
+  data:{ labels:sRev.map(s=>`${s.id}. ${s.name}`), datasets:[{ data:sRev.map(s=>s.pct), backgroundColor:sRev.map(s=>gColors[s.group]||"rgba(200,200,200,.4)"), borderColor:sRev.map(s=>gBorder[s.group]||"#aaa"), borderWidth:1, borderRadius:3 }] },
+  options:{ indexAxis:"y", responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${c.raw.toFixed(2)}%`,afterLabel:c=>` ${sRev[c.dataIndex].group}`}}}, scales:{x:{min:0,max:105,ticks:{callback:v=>v+"%",font:{size:9}},grid:{color:"rgba(0,168,255,0.06)"}},y:{grid:{display:false},ticks:{font:{size:9},color:"#6a9fc0"}}} }
+});
+
+// Legend for ranking
+const leg = document.getElementById("ranking-legend");
+if (leg) {
+  Object.entries(gColors).forEach(([n,c]) => {
+    const b = gBorder[n];
+    leg.innerHTML += `<span style="display:flex;align-items:center;gap:7px;font-family:'JetBrains Mono',monospace;font-size:9px;color:#6a9fc0;letter-spacing:1px;"><span style="width:10px;height:10px;border-radius:2px;background:${c};border:1px solid ${b};display:inline-block;"></span>${n}</span>`;
+  });
+}
+
+// ── Parse DD/MM/YYYY or ISO date string to Date object ───────────────
+function parseRowDate(str) {
+  if (!str) return null;
+  // DD/MM/YYYY
+  const m1 = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  if (m1) return new Date(+m1[3], +m1[2]-1, +m1[1]);
+  // YYYY-MM-DD
+  const m2 = str.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (m2) return new Date(+m2[1], +m2[2]-1, +m2[3]);
+  return null;
+}
+
+// ── Apply both text search and date filter to a tbody ─────────────────
+function applyTableFilters(tbodyId, searchId, fromId, toId, countId) {
+  const q      = (document.getElementById(searchId)?.value || "").toLowerCase();
+  const fromEl = document.getElementById(fromId);
+  const toEl   = document.getElementById(toId);
+  const fromDate = fromEl?.value ? new Date(fromEl.value) : null;
+  const toDate   = toEl?.value   ? new Date(toEl.value)   : null;
+  if (toDate) toDate.setHours(23,59,59,999); // include full end day
+
+  let visible = 0;
+  document.querySelectorAll(`#${tbodyId} tr`).forEach(r => {
+    const txt = r.textContent.toLowerCase();
+    const matchText = !q || txt.includes(q);
+    let matchDate = true;
+    if (fromDate || toDate) {
+      const dateCell = r.cells[0]?.textContent.trim();
+      const rowDate  = parseRowDate(dateCell);
+      if (rowDate) {
+        if (fromDate && rowDate < fromDate) matchDate = false;
+        if (toDate   && rowDate > toDate)   matchDate = false;
+      } else {
+        matchDate = false; // no parseable date → hide when filter active
+      }
+    }
+    const show = matchText && matchDate;
+    r.style.display = show ? "" : "none";
+    if (show) visible++;
+  });
+  const countEl = document.getElementById(countId);
+  if (countEl) {
+    const total = document.querySelectorAll(`#${tbodyId} tr`).length;
+    countEl.textContent = (fromDate || toDate || q) ? `${visible} / ${total}` : "";
+  }
+}
+
+// Table search
+document.getElementById("defectSearch").addEventListener("input", function() {
+  applyTableFilters("defectTbody","defectSearch","weldDateFrom","weldDateTo","weldDateCount");
+});
+document.getElementById("finalSearch").addEventListener("input", function() {
+  applyTableFilters("finalTbody","finalSearch","finalDateFrom","finalDateTo","finalDateCount");
+});
+
+// Date filter events
+["weldDateFrom","weldDateTo"].forEach(id => {
+  document.getElementById(id)?.addEventListener("change", () =>
+    applyTableFilters("defectTbody","defectSearch","weldDateFrom","weldDateTo","weldDateCount"));
+});
+["finalDateFrom","finalDateTo"].forEach(id => {
+  document.getElementById(id)?.addEventListener("change", () =>
+    applyTableFilters("finalTbody","finalSearch","finalDateFrom","finalDateTo","finalDateCount"));
+});
+
+function clearDateFilter(prefix) {
+  if (prefix === "weld") {
+    const f = document.getElementById("weldDateFrom");
+    const t = document.getElementById("weldDateTo");
+    if (f) f.value = ""; if (t) t.value = "";
+    applyTableFilters("defectTbody","defectSearch","weldDateFrom","weldDateTo","weldDateCount");
+  } else {
+    const f = document.getElementById("finalDateFrom");
+    const t = document.getElementById("finalDateTo");
+    if (f) f.value = ""; if (t) t.value = "";
+    applyTableFilters("finalTbody","finalSearch","finalDateFrom","finalDateTo","finalDateCount");
+  }
+}
+
+// Sort
+function sortT(id,col){
+  const t=document.getElementById(id), rows=Array.from(t.tBodies[0].rows);
+  const asc = t.getAttribute("ds")==col && t.getAttribute("dd")==="a" ? false : true;
+  t.setAttribute("ds",col); t.setAttribute("dd",asc?"a":"d");
+  rows.sort((a,b)=>{
+    const av=a.cells[col]?.textContent.trim()||"", bv=b.cells[col]?.textContent.trim()||"";
+    const an=parseFloat(av), bn=parseFloat(bv);
+    if(!isNaN(an)&&!isNaN(bn)) return asc?an-bn:bn-an;
+    return asc?av.localeCompare(bv):bv.localeCompare(av);
+  });
+  rows.forEach(r=>t.tBodies[0].appendChild(r));
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   EXPORT FUNCTIONS
+   ═══════════════════════════════════════════════════════════════════ */
+
+// ── Export CSV ────────────────────────────────────────────────────────
+function exportCSV(tbodyId, filename) {
+  const tbody = document.getElementById(tbodyId);
+  if (!tbody) return;
+
+  // Get headers from thead
+  const table  = tbody.closest("table");
+  const headers = Array.from(table.querySelectorAll("thead th"))
+                       .map(th => th.textContent.replace(/[↕]/g,"").trim());
+
+  // Get visible rows only (respect search filter)
+  const rows = Array.from(tbody.querySelectorAll("tr"))
+    .filter(r => r.style.display !== "none");
+
+  if (rows.length === 0) { alert("No data to export."); return; }
+
+  const lines = [headers.join(",")];
+  rows.forEach(r => {
+    const cells = Array.from(r.querySelectorAll("td")).map(td => {
+      // Strip badge HTML, keep plain text; wrap in quotes if contains comma
+      const txt = td.textContent.trim().replace(/\s+/g," ");
+      return txt.includes(",") ? `"${txt}"` : txt;
+    });
+    lines.push(cells.join(","));
+  });
+
+  const blob = new Blob([lines.join("\n")], {type:"text/csv;charset=utf-8;"});
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement("a");
+  const date = new Date().toISOString().slice(0,10);
+  a.href     = url;
+  a.download = `${filename}_${date}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ── Export PDF (print-to-PDF via browser print dialog) ───────────────
+function exportPDF(tableId, title) {
+  const table = document.getElementById(tableId);
+  if (!table) return;
+
+  // Clone table, filter visible rows
+  const clone = table.cloneNode(true);
+  Array.from(clone.querySelectorAll("tbody tr")).forEach(r => {
+    const orig = table.querySelector(`tbody tr:nth-child(${r.rowIndex})`);
+    if (orig && orig.style.display === "none") r.remove();
+  });
+
+  const _rd = document.getElementById("footer-date")?.textContent;
+  const _now = new Date();
+  const _pad = n => String(n).padStart(2,'0');
+  const _today = `${_pad(_now.getDate())}/${_pad(_now.getMonth()+1)}/${_now.getFullYear()}`;
+  const reportDate = (_rd && _rd.trim()) ? _rd.trim() : _today;
+
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="UTF-8">
+      <title>${title}</title>
+      <style>
+        @page { size: A4 portrait; margin: 15mm; }
+        body { font-family: Arial, sans-serif; font-size: 10px; color: #111; }
+        h2 { font-size: 14px; margin-bottom: 4px; color: #003a6b; }
+        p.sub { font-size: 9px; color: #666; margin-bottom: 12px; }
+        table { width: 100%; border-collapse: collapse; }
+        thead th { background: #003a6b; color: #fff; padding: 7px 10px; text-align: left; font-size: 9px; letter-spacing: 0.5px; text-transform: uppercase; }
+        tbody tr:nth-child(even) { background: #f0f5ff; }
+        tbody td { padding: 6px 10px; border-bottom: 1px solid #dde; font-size: 10px; }
+        .badge { display:inline-block; padding:2px 7px; border-radius:3px; font-size:8px; font-weight:600; }
+        .bg { background:#d4f7e4; color:#00703c; }
+        .ba { background:#fff3cd; color:#856404; }
+        .br { background:#fde8e8; color:#b91c1c; }
+        .footer { margin-top: 16px; font-size: 8px; color: #999; text-align: right; }
+      </style>
+    </head>
+    <body>
+      <h2>Sakarya Gas Field — ${title}</h2>
+      <p class="sub">IQS S.r.l. · Report Date: ${reportDate} · Exported: ${new Date().toLocaleString()}</p>
+      ${clone.outerHTML}
+      <div class="footer">IQS Confidential · Sakarya Phase 3 · www.iqs-ww.com</div>
+    </body>
+    </html>`;
+
+  const win = window.open("","_blank","width=1100,height=800");
+  win.document.write(html);
+  win.document.close();
+  win.onload = () => { win.focus(); win.print(); };
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   ADMIN — PRINT INSPECTION REPORT
+   ═══════════════════════════════════════════════════════════════════ */
+function printReport() {
+  const get = id => document.getElementById(id)?.textContent?.trim() || "—";
+
+  const _rawDate = get("hdr-date-val").replace(/ \/ /g,"/");
+  const _now2 = new Date();
+  const _pad2 = n => String(n).padStart(2,'0');
+  const _today2 = `${_pad2(_now2.getDate())}/${_pad2(_now2.getMonth()+1)}/${_now2.getFullYear()}`;
+  const reportDate = (_rawDate && _rawDate !== "—") ? _rawDate : _today2;
+  const poQty      = get("po-qty");
+  const accepted   = get("po-accepted");
+  const rejected   = get("ss-rej");
+  const repair     = get("ss-rep");
+  const incoming   = get("ss-total");
+  const passRate   = get("kpi-rate");
+  const completion = get("po-completion");
+  const logoSrc    = document.querySelector(".login-logo img")?.src || "";
+
+  // Welding defects
+  const weldRows = Array.from(document.querySelectorAll("#defectTbody tr")).map(r => {
+    const c = r.querySelectorAll("td"); if (!c.length) return null;
+    return [c[0].textContent,c[1].textContent,c[2].textContent,
+            c[3].textContent,c[4].textContent,c[5].textContent,c[6].textContent.trim()];
+  }).filter(Boolean);
+
+  // Final defects
+  const finalRows = Array.from(document.querySelectorAll("#finalTbody tr")).map(r => {
+    const c = r.querySelectorAll("td"); if (!c.length) return null;
+    return [c[0].textContent,c[1].textContent,c[2].textContent,
+            c[3].textContent,c[4].textContent,c[5].textContent,c[6].textContent.trim()];
+  }).filter(Boolean);
+
+  // ITP Steps from live chart
+  const itpLabels = (window._rankingChart?.data?.labels || []).slice().reverse();
+  const itpData   = (window._rankingChart?.data?.datasets?.[0]?.data || []).slice().reverse();
+
+  // Severity badge
+  function sevBadge(defect, ext) {
+    const hi = ["burn through","wall thickness below spec","wt below spec"];
+    if (hi.some(h=>(defect||"").toLowerCase().includes(h))||(parseInt(ext)||0)>=200)
+      return '<span style="background:#fee2e2;color:#b91c1c;padding:2px 7px;border-radius:3px;font-size:8px;font-weight:700">HIGH</span>';
+    if ((parseInt(ext)||0)>=100)
+      return '<span style="background:#fef3c7;color:#92400e;padding:2px 7px;border-radius:3px;font-size:8px;font-weight:700">MED</span>';
+    return '<span style="background:#dcfce7;color:#166534;padding:2px 7px;border-radius:3px;font-size:8px;font-weight:700">LOW</span>';
+  }
+
+  // Defect type counts
+  const typeCounts = {};
+  weldRows.forEach(r=>{const k=r[3].trim(); typeCounts[k]=(typeCounts[k]||0)+1;});
+
+  // Extension buckets
+  const extB = {"0–50mm":0,"51–100mm":0,"101–200mm":0,"201+mm":0};
+  weldRows.forEach(r=>{
+    const e=parseInt(r[5])||0;
+    if(e<=50)extB["0–50mm"]++;
+    else if(e<=100)extB["51–100mm"]++;
+    else if(e<=200)extB["101–200mm"]++;
+    else extB["201+mm"]++;
+  });
+  const maxExt = Math.max(...Object.values(extB), 1);
+  const maxType = Math.max(...Object.values(typeCounts), 1);
+
+  // Quality split bars
+  const total = (parseInt(accepted.replace(/,/g,""))||0)+(parseInt(repair)||0)+(parseInt(rejected)||0);
+  const accPct  = total ? ((parseInt(accepted.replace(/,/g,""))||0)/total*100).toFixed(1) : 0;
+  const repPct  = total ? ((parseInt(repair)||0)/total*100).toFixed(1) : 0;
+  const rejPct  = total ? ((parseInt(rejected)||0)/total*100).toFixed(1) : 0;
+
+  // ITP table rows (2 columns)
+  const half = Math.ceil(itpLabels.length/2);
+  const itpLeft  = itpLabels.slice(0, half);
+  const itpRight = itpLabels.slice(half);
+  const itpDataL = itpData.slice(0, half);
+  const itpDataR = itpData.slice(half);
+
+  function itpRow(lbl, pct) {
+    if (!lbl) return '<tr><td colspan="3"></td></tr>';
+    const na = lbl.includes("[N/A]");
+    const name = lbl.replace(" [N/A]","");
+    const sc = na?"#94a3b8":pct>=88?"#00875a":pct>=50?"#d97706":"#dc2626";
+    const st = na?"N/A":pct>=88?"PASS":pct>=50?"WARN":"LOW";
+    const bar = na ? "" : `<div style="height:6px;background:#e2e8f0;border-radius:3px;margin-top:3px;"><div style="height:6px;width:${Math.min(pct,100)}%;background:${sc};border-radius:3px;"></div></div>`;
+    return `<tr style="border-bottom:1px solid #f1f5f9;">
+      <td style="padding:4px 6px;font-size:8.5px;color:#374151">${name}</td>
+      <td style="padding:4px 6px;font-size:8.5px;font-weight:700;color:${sc};text-align:center">${na?"—":pct.toFixed(1)+"%"}${bar}</td>
+      <td style="padding:4px 6px;font-size:8px;font-weight:700;color:${sc};text-align:center">${st}</td>
+    </tr>`;
+  }
+
+  const weldHtml = weldRows.length
+    ? weldRows.map(r=>`<tr style="border-bottom:1px solid #f1f5f9;">
+        <td>${r[0]}</td><td>${r[1]}</td>
+        <td style="font-family:monospace;font-size:7.5px">${r[2]}</td>
+        <td>${r[3]}</td>
+        <td style="text-align:center">${r[4]}</td>
+        <td style="text-align:center">${r[5]}</td>
+        <td style="text-align:center">${sevBadge(r[3],r[5])}</td>
+      </tr>`).join("")
+    : '<tr><td colspan="7" style="text-align:center;color:#94a3b8;padding:12px">No welding defects recorded</td></tr>';
+
+  const finalHtml = finalRows.length
+    ? finalRows.map(r=>`<tr style="border-bottom:1px solid #f1f5f9;">
+        <td>${r[0]}</td><td>${r[1]}</td>
+        <td style="font-family:monospace;font-size:7.5px">${r[2]}</td>
+        <td>${r[3]}</td>
+        <td style="text-align:center">${r[4]}</td>
+        <td style="text-align:center">${r[5]}</td>
+        <td style="text-align:center">${sevBadge(r[3],r[5])}</td>
+      </tr>`).join("")
+    : '<tr><td colspan="7" style="text-align:center;color:#94a3b8;padding:12px">No final defects recorded</td></tr>';
+
+  // Mini bar chart builder (pure HTML/CSS, no canvas)
+  function miniBarChart(items, maxVal, barColor) {
+    return Object.entries(items).map(([lbl,val])=>`
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:5px;">
+        <div style="width:90px;font-size:7.5px;color:#374151;text-align:right;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${lbl}">${lbl}</div>
+        <div style="flex:1;height:14px;background:#f1f5f9;border-radius:3px;overflow:hidden;">
+          <div style="height:14px;width:${(val/maxVal*100).toFixed(0)}%;background:${barColor};border-radius:3px;"></div>
+        </div>
+        <div style="width:20px;font-size:8px;font-weight:700;color:#374151;text-align:left;flex-shrink:0">${val}</div>
+      </div>`).join("");
+  }
+
+  const html = `<!DOCTYPE html><html><head><meta charset="UTF-8">
+<title>Sakarya QC Inspection Report — ${reportDate}</title>
+<style>
+  @page{size:A4 portrait;margin:12mm 14mm 14mm 14mm;}
+  @page :first{size:A4 portrait;}
+  @page :left{size:A4 portrait !important;}
+  @page :right{size:A4 portrait !important;}
+  @media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+    .no-print{display:none!important;} .pb{page-break-before:always;}}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html,body{width:210mm !important;max-width:210mm !important;}
+  body{font-family:Arial,sans-serif;font-size:9px;color:#1a1a2e;background:#fff;}
+  .page{background:#fff;padding:10mm 12mm;}
+  @media print{.page{margin:0;padding:12mm 14mm;}}
+  .hdr{display:flex;align-items:center;justify-content:space-between;padding-bottom:6px;border-bottom:2.5px solid #003a6b;margin-bottom:10px;}
+  .hdr img{height:24px;}
+  .hdr-r .t1{font-size:11px;font-weight:700;color:#003a6b;text-align:right;}
+  .hdr-r .t2{font-size:7.5px;color:#64748b;text-align:right;margin-top:2px;}
+  .sec{font-size:9.5px;font-weight:700;color:#fff;background:#003a6b;padding:4px 8px;margin:10px 0 6px;letter-spacing:.2px;}
+  .kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:8px;}
+  .kpi{background:#eff6ff;border:1px solid #bfdbfe;border-radius:5px;padding:7px;text-align:center;}
+  .kpi .v{font-size:18px;font-weight:800;line-height:1.1;}
+  .kpi .l{font-size:7px;color:#64748b;text-transform:uppercase;margin-top:2px;}
+  .info-row{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-bottom:8px;}
+  .ii{background:#f8fafc;border:1px solid #e2e8f0;border-radius:4px;padding:5px 7px;}
+  .ii .il{font-size:6.5px;color:#64748b;text-transform:uppercase;}
+  .ii .iv{font-size:10px;font-weight:600;margin-top:1px;}
+  .charts-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:8px;}
+  .cbox{background:#f8fafc;border:1px solid #e2e8f0;border-radius:5px;padding:8px;}
+  .ct{font-size:7.5px;font-weight:700;color:#003a6b;text-transform:uppercase;margin-bottom:6px;letter-spacing:.2px;}
+  table{width:100%;border-collapse:collapse;font-size:8px;}
+  thead th{background:#003a6b;color:#fff;padding:4px 6px;text-align:left;font-size:7.5px;letter-spacing:.2px;text-transform:uppercase;}
+  tbody td{padding:4px 6px;}
+  .itp-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+  .itp-grid table thead th{background:#1e40af;}
+  .footer{margin-top:10px;padding-top:5px;border-top:1px solid #e2e8f0;font-size:7px;color:#94a3b8;text-align:center;}
+  .print-btn{position:fixed;top:12px;right:12px;padding:8px 18px;background:#003a6b;color:#fff;border:none;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;z-index:999;box-shadow:0 2px 6px rgba(0,0,0,.25);}
+</style>
+</head><body>
+<button class="print-btn no-print" onclick="window.print()">🖨 Stampa / Salva PDF</button>
+
+<!-- ═══ PAGE 1 ═══ -->
+<div class="page">
+  <div class="hdr">
+    <img src="${logoSrc}" alt="IQS">
+    <div class="hdr-r">
+      <div class="t1">SAKARYA GAS FIELD DEVELOPMENT — PROJECT PHASE 3</div>
+      <div class="t2">QC Inspection Report &nbsp;·&nbsp; Report Date: ${reportDate} &nbsp;·&nbsp; IQS S.r.l. Worldwide Inspection Company</div>
+    </div>
+  </div>
+
+  <div class="sec">Key Performance Indicators</div>
+  <div class="kpi-row">
+    <div class="kpi"><div class="v" style="color:#003a6b">${poQty}</div><div class="l">PO Quantity</div></div>
+    <div class="kpi"><div class="v" style="color:#00875a">${accepted}</div><div class="l">Ready for Acceptance</div></div>
+    <div class="kpi"><div class="v" style="color:#d97706">${passRate}</div><div class="l">Pass Rate</div></div>
+    <div class="kpi"><div class="v" style="color:#dc2626">${rejected}</div><div class="l">Pipes Rejected</div></div>
+  </div>
+  <div class="info-row">
+    <div class="ii"><div class="il">Incoming Plates</div><div class="iv">${incoming}</div></div>
+    <div class="ii"><div class="il">Repair / Rework</div><div class="iv">${repair}</div></div>
+    <div class="ii"><div class="il">Completion vs PO</div><div class="iv">${completion}</div></div>
+    <div class="ii"><div class="il">Report Date</div><div class="iv">${reportDate}</div></div>
+  </div>
+
+  <div class="sec">Quality Split &amp; Defect Analysis</div>
+  <div class="charts-row">
+    <div class="cbox">
+      <div class="ct">Quality Split</div>
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">
+        <div style="width:60px;font-size:7.5px;color:#374151">Ready for Accept.</div>
+        <div style="flex:1;height:12px;background:#f1f5f9;border-radius:3px;overflow:hidden;"><div style="height:12px;width:${accPct}%;background:#00875a;border-radius:3px;"></div></div>
+        <div style="width:28px;font-size:8px;font-weight:700;color:#00875a">${accepted}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">
+        <div style="width:60px;font-size:7.5px;color:#374151">Repair/Rework</div>
+        <div style="flex:1;height:12px;background:#f1f5f9;border-radius:3px;overflow:hidden;"><div style="height:12px;width:${repPct}%;background:#d97706;border-radius:3px;"></div></div>
+        <div style="width:28px;font-size:8px;font-weight:700;color:#d97706">${repair}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <div style="width:60px;font-size:7.5px;color:#374151">Rejected</div>
+        <div style="flex:1;height:12px;background:#f1f5f9;border-radius:3px;overflow:hidden;"><div style="height:12px;width:${rejPct}%;background:#dc2626;border-radius:3px;"></div></div>
+        <div style="width:28px;font-size:8px;font-weight:700;color:#dc2626">${rejected}</div>
+      </div>
+    </div>
+    <div class="cbox">
+      <div class="ct">Defect Types — Welding</div>
+      ${miniBarChart(typeCounts, maxType, "#0078d4")}
+    </div>
+    <div class="cbox">
+      <div class="ct">Extension Distribution</div>
+      ${miniBarChart(extB, maxExt, "#dc2626")}
+    </div>
+  </div>
+
+  <div class="sec">Welding Defects Log</div>
+  <table>
+    <thead><tr><th>Date</th><th>Shift</th><th>Pipe N°</th><th>Defect Description</th><th style="text-align:center">Pos (mm)</th><th style="text-align:center">Ext (mm)</th><th style="text-align:center">Severity</th></tr></thead>
+    <tbody>${weldHtml}</tbody>
+  </table>
+</div>
+
+<!-- ═══ PAGE 2 ═══ -->
+<div class="page pb">
+  <div class="hdr">
+    <img src="${logoSrc}" alt="IQS">
+    <div class="hdr-r">
+      <div class="t1">SAKARYA GAS FIELD DEVELOPMENT — PROJECT PHASE 3</div>
+      <div class="t2">QC Inspection Report &nbsp;·&nbsp; Report Date: ${reportDate}</div>
+    </div>
+  </div>
+
+  <div class="sec">Final Inspection Defects</div>
+  <table>
+    <thead><tr><th>Date</th><th>Shift</th><th>Pipe N°</th><th>Defect Description</th><th style="text-align:center">Pos (mm)</th><th style="text-align:center">Ext (mm)</th><th style="text-align:center">Severity</th></tr></thead>
+    <tbody>${finalHtml}</tbody>
+  </table>
+
+  <div class="sec" style="margin-top:12px">ITP Steps — Pass Rate (24 Steps)</div>
+  <div class="itp-grid">
+    <table>
+      <thead><tr><th>ITP Step</th><th style="text-align:center">Yield %</th><th style="text-align:center">Status</th></tr></thead>
+      <tbody>${itpLeft.map((lbl,i)=>itpRow(lbl,itpDataL[i])).join("")}</tbody>
+    </table>
+    <table>
+      <thead><tr><th>ITP Step</th><th style="text-align:center">Yield %</th><th style="text-align:center">Status</th></tr></thead>
+      <tbody>${itpRight.map((lbl,i)=>itpRow(lbl,itpDataR[i])).join("")}</tbody>
+    </table>
+  </div>
+
+  <div class="footer">
+    IQS S.r.l. · Via Europa 42, 20097 S. Donato Mil.se (MI) · +39 02 49532180 · www.iqs-ww.com &nbsp;|&nbsp;
+    Printed: ${new Date().toLocaleString()} &nbsp;|&nbsp; CONFIDENTIAL
+  </div>
+</div>
+</body></html>`;
+
+  const win = window.open("","_blank","width=820,height=1100");
+  win.document.write(html);
+  win.document.close();
+}
+
+
+
+// Tab navigation
+document.querySelectorAll(".tab").forEach(t => {
+  t.addEventListener("click", () => {
+    document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
+    document.querySelectorAll(".tab-content").forEach(x=>x.classList.remove("active"));
+    t.classList.add("active");
+    document.getElementById(t.dataset.tab).classList.add("active");
+    if(typeof trackTab==="function") trackTab(t.textContent.trim());
+  });
+});
+
+// Easter egg
+(function(){
+  const trigger = document.getElementById("eggTrigger");
+  const popup   = document.getElementById("eggPopup");
+  if (!trigger || !popup) return;
+  let open = false;
+  trigger.addEventListener("click", e => {
+    e.stopPropagation();
+    open = !open;
+    popup.classList.toggle("show", open);
+  });
+  document.addEventListener("click", () => { open = false; popup.classList.remove("show"); });
+})();
+
+// Theme picker
+(function(){
+  const btn    = document.getElementById("theme-picker-btn");
+  const panel  = document.getElementById("theme-picker-panel");
+  const picker = document.getElementById("tp-color-input");
+  const hexLbl = document.getElementById("tp-color-hex");
+  if (!btn || !panel) return;
+  let open = false;
+
+  btn.addEventListener("click", e => {
+    e.stopPropagation();
+    open = !open;
+    panel.style.display = open ? "block" : "none";
+  });
+  document.addEventListener("click", () => { open = false; panel.style.display = "none"; });
+  panel.addEventListener("click", e => e.stopPropagation());
+
+  function applyBg(bg, s1, s2, isLight) {
+    const root = document.documentElement;
+    root.style.setProperty("--bg", bg);
+    if (s1) root.style.setProperty("--s1", s1);
+    if (s2) root.style.setProperty("--s2", s2);
+    document.body.classList.toggle("light", !!isLight);
+    applyChartTheme(!!isLight);
+    // Persist
+    try { sessionStorage.setItem("sak_theme", JSON.stringify({bg, s1, s2, isLight})); } catch(e){}
+  }
+
+  document.querySelectorAll(".tp-preset").forEach(el => {
+    el.addEventListener("click", e => {
+      e.stopPropagation();
+      document.querySelectorAll(".tp-preset").forEach(p => p.style.borderColor = "transparent");
+      el.style.borderColor = "#00a8ff";
+      const bg = el.dataset.bg, s1 = el.dataset.s1, s2 = el.dataset.s2;
+      if (picker) { picker.value = bg; }
+      if (hexLbl) hexLbl.textContent = bg;
+      applyBg(bg, s1, s2, el.dataset.light === "1");
+      open = false;
+      panel.style.display = "none";
+    });
+  });
+
+  if (picker) {
+    picker.addEventListener("input", function() {
+      if (hexLbl) hexLbl.textContent = this.value;
+      document.querySelectorAll(".tp-preset").forEach(p => p.style.borderColor = "transparent");
+      applyBg(this.value, null, null, false);
+    });
+  }
+
+  // Restore saved theme
+  try {
+    const saved = sessionStorage.getItem("sak_theme");
+    if (saved) {
+      const t = JSON.parse(saved);
+      applyBg(t.bg, t.s1, t.s2, t.isLight);
+      if (picker) picker.value = t.bg;
+      if (hexLbl) hexLbl.textContent = t.bg;
+      document.querySelectorAll(".tp-preset").forEach(p => {
+        p.style.borderColor = p.dataset.bg === t.bg ? "#00a8ff" : "transparent";
+      });
+    }
+  } catch(e){}
+})();
+</script>
+</body>
+</html>

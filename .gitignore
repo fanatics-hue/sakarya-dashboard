@@ -1,0 +1,9 @@
+# Temporanei Office
+~$*.xlsx
+~$*.docx
+*.tmp
+
+# Sistema
+Thumbs.db
+desktop.ini
+.DS_Store
