@@ -23,6 +23,11 @@ echo [1/4] Controllo file modificati...
 git status --short
 echo.
 
+:: Mostra il file "Sakarya Inspection" trovato nella cartella
+echo File dati rilevato:
+for %%f in ("Sakarya Inspection Overall Status as of *.xlsx") do echo   %%f
+echo.
+
 :: Verifica che ci sia qualcosa da committare
 git diff --quiet && git diff --cached --quiet && (
     echo Nessuna modifica rilevata. Niente da aggiornare.
@@ -35,10 +40,11 @@ git diff --quiet && git diff --cached --quiet && (
 echo [2/4] Aggiunta file...
 git add .
 
-:: Crea commit con data automatica
-set OGGI=%date:~6,4%-%date:~3,2%-%date:~0,2%
+:: Crea commit usando il nome del file trovato
+set FILENAME=Sakarya Inspection (file non trovato)
+for %%f in ("Sakarya Inspection Overall Status as of *.xlsx") do set FILENAME=%%~nf
 echo [3/4] Creazione commit...
-git commit -m "Aggiornamento dati settimanale — %OGGI%"
+git commit -m "Aggiornamento: %FILENAME%"
 
 :: Push su GitHub
 echo [4/4] Push su GitHub...
