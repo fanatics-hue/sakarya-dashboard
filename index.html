@@ -738,16 +738,12 @@ document.addEventListener("DOMContentLoaded", () => {
 /* ═══════════════════════════════════════════════════════════════════
    GOOGLE SHEETS CONFIG — 3 separate tabs, each with its own GID
    ═══════════════════════════════════════════════════════════════════ */
-// Google Apps Script endpoint — no CORS issues
-// Endpoint assembled at runtime to reduce static analysis surface
-const GAS_URL = ["https://script.google.com/macros/s/",
-  "AKfycbwbCBwnfyGdNJD4HJNdRQ-Lm9OEyrOM5JFFtiEIXy7FO1hELIcThaBIGHN267YxWzc",
-  "/exec"].join("");
-
+// Data source — CSV locali generati da genera_dati.py (Excel -> CSV -> GitHub).
+// I file vengono pubblicati su GitHub Pages insieme a index.html.
 const URLS = {
-  summary      : `${GAS_URL}?sheet=summary`,
-  defectsWeld  : `${GAS_URL}?sheet=defectsWeld`,
-  defectsFinal : `${GAS_URL}?sheet=defectsFinal`,
+  summary      : `./data/summary.csv`,
+  defectsWeld  : `./data/defectsWeld.csv`,
+  defectsFinal : `./data/defectsFinal.csv`,
 };
 
 const REFRESH_MS = 5 * 60 * 1000;
@@ -774,7 +770,9 @@ async function fetchCSV(url) {
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), 15000);
   try {
-    const res = await fetch(url, {signal: ctrl.signal});
+    // cache-busting: forza il browser/CDN a riscaricare i CSV aggiornati
+    const bust = url + (url.includes("?") ? "&" : "?") + "_=" + Date.now();
+    const res = await fetch(bust, {signal: ctrl.signal, cache: "no-store"});
     clearTimeout(timer);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const text = await res.text();

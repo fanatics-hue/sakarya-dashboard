@@ -1,0 +1,36 @@
+SAKARYA GAS FIELD,
+KEY PERFORMANCE INDICATORS,
+Field,Value
+Purchase Order (PO) Qty,15462
+Incoming Plates,170
+Pipes Accepted,149
+Pipes Rejected,3
+Repair / Rework,4
+Overall Pass Rate (%),87.65
+Report Date,06/06/2026
+
+Seq. N°,ITP Step,Section,Count,Yield vs Input (%),Loss vs Input,Cumul. Loss,Remarks
+1,Incoming Plate,Forming,170,100,0,0,
+2,Pipe Forming,Forming,170,100,0,0,
+3,Tack Welding,Forming,170,100,0,0,
+4,ID SAWL,Forming,170,100,0,0,
+5,OD SAWL,Forming,170,100,0,0,
+6,AUT1,Welding & NDT,170,100,0,0,
+7,Fluoroscopic,Welding & NDT,12,7.06,158,158,
+8,Welding Repair,Welding & NDT,4,2.35,4,4,
+9,MCE1,Mechanical,164,96.47,6,6,
+10,MCE2,Mechanical,0,0,0,0,
+11,MCE Inspection,Mechanical,164,96.47,6,6,
+12,Straightness Re-work,Mechanical,6,0,0,0,
+13,Hydro Test,Testing,158,92.94,12,12,
+14,AUT2,Testing,0,0,0,0,
+15,Phase Arr.,Testing,158,92.94,12,12,
+16,MUT,Testing,158,92.94,12,12,
+17,End UT,Testing,157,92.35,13,13,
+18,X-Ray,Testing,156,91.76,14,14,
+19,OoR Pipe Body,Dimensional & Final,156,91.76,14,14,
+20,Dimensional 1,Dimensional & Final,150,88.24,20,20,
+21,Dimensional 2,Dimensional & Final,149,87.65,21,21,
+22,MPI,Dimensional & Final,149,87.65,21,21,
+23,UT DHC,Dimensional & Final,147,86.47,23,23,
+24,Final Mark & Weigh,Dimensional & Final,149,87.65,21,21,
