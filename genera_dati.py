@@ -19,11 +19,13 @@ from datetime import datetime
 import openpyxl
 
 # ======================================================================
-#  CONFIG — gli unici due valori che NON sono nell'Excel di status.
-#  Modificali qui solo se cambiano (raramente).
+#  CONFIG — l'unico valore che NON e' nell'Excel di status.
+#  Modificalo qui solo se cambia (raramente).
 # ======================================================================
 PO_QTY = 15462          # Purchase Order (PO) Qty — quantita' totale ordine
-PIPES_REJECTED = 3      # Pipes Rejected (disposizione finale) — vedi nota a fine file
+# NB: "Pipes Rejected" NON e' un config: viene calcolato come numero di
+#     righe della tabella Rejection (foglio Rejection -> defectsFinal),
+#     replicando la logica del vecchio dashboard live.
 # ======================================================================
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -86,8 +88,9 @@ def righe_foglio(ws, max_col=12):
 # ----------------------------------------------------------------------
 #  ESTRAZIONE
 # ----------------------------------------------------------------------
-def estrai_summary(wb, report_date):
-    """Dal foglio 'Dashboard': KPI + 24 ITP Steps."""
+def estrai_summary(wb, report_date, rejected):
+    """Dal foglio 'Dashboard': KPI + 24 ITP Steps.
+    `rejected` = n. righe tabella Rejection (calcolato a parte)."""
     ws = wb["Dashboard"]
     rows = righe_foglio(ws)
 
@@ -161,7 +164,7 @@ def estrai_summary(wb, report_date):
     out.append(["Purchase Order (PO) Qty", PO_QTY])
     out.append(["Incoming Plates", incoming])
     out.append(["Pipes Accepted", accepted])
-    out.append(["Pipes Rejected", PIPES_REJECTED])
+    out.append(["Pipes Rejected", rejected])
     out.append(["Repair / Rework", repair_count])
     out.append(["Overall Pass Rate (%)", passrate])
     out.append(["Report Date", report_date])
@@ -235,9 +238,12 @@ def main():
     warnings.simplefilter("ignore")
     wb = openpyxl.load_workbook(excel, read_only=True, data_only=True)
 
-    summary, stats = estrai_summary(wb, report_date)
+    # prima i difetti: "Pipes Rejected" = n. righe della tabella Rejection
     weld = estrai_difetti(wb, "Repair", con_misure=True)
     final = estrai_difetti(wb, "Rejection", con_misure=False)
+    rejected = len(final) - 1   # -1 per l'header
+
+    summary, stats = estrai_summary(wb, report_date, rejected)
 
     scrivi_csv("summary.csv", summary)
     scrivi_csv("defectsWeld.csv", weld)
@@ -251,7 +257,7 @@ def main():
     log("  Repair / Rework  : %s" % stats["repair"])
     log("  ITP Steps        : %s righe" % stats["itp"])
     log("  PO Qty (config)  : %s" % PO_QTY)
-    log("  Pipes Rejected   : %s  (config)" % PIPES_REJECTED)
+    log("  Pipes Rejected   : %s  (= righe Rejection)" % rejected)
     log("Difetti Weld (Repair)    : %s righe" % (len(weld) - 1))
     log("Difetti Final (Rejection): %s righe" % (len(final) - 1))
     log("-" * 60)
