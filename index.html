@@ -1087,14 +1087,28 @@ function applyDefectsFinal(rows) {
 /* ═══════════════════════════════════════════════════════════════════
    UPDATE TABLE — reusable for both weld and final
    ═══════════════════════════════════════════════════════════════════ */
-// Defect types that are always HIGH severity in Final Inspection.
-// Riconosce il concetto a prescindere dalla formulazione usata nell'Excel
-// (es. "WT Below Spec", "Wall TKS Below the Spec.", "Wall Thickness Below Spec").
+// Severità per difetto in Final Inspection, riconosciuta dalla natura del
+// difetto a prescindere dalla formulazione usata nell'Excel.
+//   HIGH = difetti che compromettono integrità o proprietà del materiale:
+//          - Burn Through (a tutto spessore)
+//          - Wall Thickness Below Spec ("WT Below Spec", "Wall TKS Below the Spec.", ...)
+//          - CVN / Charpy Rejection (bocciatura prova di resilienza)
+//   MED  = deviazioni che possono degradare le proprietà meccaniche:
+//          - Heated over N times (cicli di riscaldo oltre il consentito)
 function isFinalHighSeverity(defect) {
   const t = (defect || "").toLowerCase();
   if (/burn[\s-]*through/.test(t)) return true;
   // spessore parete sotto specifica: (wall|wt|tks|thk|thickness) + below + spec
   if (/\b(wall|wt|tks|thk|thickness)\b/.test(t) && t.includes("below") && t.includes("spec")) return true;
+  // bocciatura prova Charpy/impact (es. "CVN Rejection")
+  if (/\b(cvn|charpy)\b/.test(t)) return true;
+  return false;
+}
+
+function isFinalMedSeverity(defect) {
+  const t = (defect || "").toLowerCase();
+  // riscaldi ripetuti oltre il consentito (es. "Heated over 3 times")
+  if (/heated\s+over/.test(t)) return true;
   return false;
 }
 
@@ -1102,6 +1116,9 @@ function getSeverityBadge(d, isFinal) {
   if (isFinal) {
     if (isFinalHighSeverity(d.defect)) {
       return `<span class="badge br">HIGH</span>`;
+    }
+    if (isFinalMedSeverity(d.defect)) {
+      return `<span class="badge ba">MED</span>`;
     }
   }
   // Default: severity based on extension (mm)
@@ -1690,7 +1707,7 @@ function printReport() {
   function sevBadge(defect, ext) {
     if (isFinalHighSeverity(defect)||(parseInt(ext)||0)>=200)
       return '<span style="background:#fee2e2;color:#b91c1c;padding:2px 7px;border-radius:3px;font-size:8px;font-weight:700">HIGH</span>';
-    if ((parseInt(ext)||0)>=100)
+    if (isFinalMedSeverity(defect)||(parseInt(ext)||0)>=100)
       return '<span style="background:#fef3c7;color:#92400e;padding:2px 7px;border-radius:3px;font-size:8px;font-weight:700">MED</span>';
     return '<span style="background:#dcfce7;color:#166534;padding:2px 7px;border-radius:3px;font-size:8px;font-weight:700">LOW</span>';
   }
