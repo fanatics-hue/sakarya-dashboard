@@ -1087,13 +1087,20 @@ function applyDefectsFinal(rows) {
 /* ═══════════════════════════════════════════════════════════════════
    UPDATE TABLE — reusable for both weld and final
    ═══════════════════════════════════════════════════════════════════ */
-// Defect types that are always HIGH severity in Final Inspection
-const FINAL_HIGH_SEVERITY = ["burn through", "wall thickness below spec", "wt below spec"];
+// Defect types that are always HIGH severity in Final Inspection.
+// Riconosce il concetto a prescindere dalla formulazione usata nell'Excel
+// (es. "WT Below Spec", "Wall TKS Below the Spec.", "Wall Thickness Below Spec").
+function isFinalHighSeverity(defect) {
+  const t = (defect || "").toLowerCase();
+  if (/burn[\s-]*through/.test(t)) return true;
+  // spessore parete sotto specifica: (wall|wt|tks|thk|thickness) + below + spec
+  if (/\b(wall|wt|tks|thk|thickness)\b/.test(t) && t.includes("below") && t.includes("spec")) return true;
+  return false;
+}
 
 function getSeverityBadge(d, isFinal) {
   if (isFinal) {
-    const defectLower = (d.defect || "").toLowerCase();
-    if (FINAL_HIGH_SEVERITY.some(k => defectLower.includes(k))) {
+    if (isFinalHighSeverity(d.defect)) {
       return `<span class="badge br">HIGH</span>`;
     }
   }
@@ -1681,8 +1688,7 @@ function printReport() {
 
   // Severity badge
   function sevBadge(defect, ext) {
-    const hi = ["burn through","wall thickness below spec","wt below spec"];
-    if (hi.some(h=>(defect||"").toLowerCase().includes(h))||(parseInt(ext)||0)>=200)
+    if (isFinalHighSeverity(defect)||(parseInt(ext)||0)>=200)
       return '<span style="background:#fee2e2;color:#b91c1c;padding:2px 7px;border-radius:3px;font-size:8px;font-weight:700">HIGH</span>';
     if ((parseInt(ext)||0)>=100)
       return '<span style="background:#fef3c7;color:#92400e;padding:2px 7px;border-radius:3px;font-size:8px;font-weight:700">MED</span>';
