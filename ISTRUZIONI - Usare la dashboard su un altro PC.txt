@@ -1,0 +1,99 @@
+============================================================
+  SAKARYA DASHBOARD - Istruzioni per usarla su un altro PC
+============================================================
+
+Ci sono DUE casi diversi. Leggi solo quello che ti serve.
+
+
+------------------------------------------------------------
+CASO A) Devi solo GUARDARE la dashboard (niente da installare)
+------------------------------------------------------------
+
+La dashboard e' un sito web. Apri questo link nel browser:
+
+   https://fanatics-hue.github.io/sakarya-dashboard/
+
+Funziona da qualsiasi PC, tablet o telefono. Non serve installare
+nulla, non serve Python, non serve Git. Salvalo nei preferiti.
+
+Se hai appena fatto un aggiornamento e non vedi i numeri nuovi,
+ricarica la pagina con  CTRL+F5  (il sito si aggiorna in ~1 minuto).
+
+
+------------------------------------------------------------
+CASO B) Devi anche AGGIORNARLA tu (caricare l'Excel nuovo)
+------------------------------------------------------------
+
+Questo richiede una preparazione UNA TANTUM. Dopo, per te sara'
+semplice come per chi te l'ha passata.
+
+>>> VIA RAPIDA (consigliata):
+    fai doppio clic su  SETUP_PRIMO_AVVIO.bat
+    Installa da solo Python, Git e la libreria che serve, e crea
+    l'icona "Sakarya Dashboard" sul Desktop. Segui quello che dice
+    a schermo (puo' chiederti di rilanciarlo una seconda volta).
+    Resta solo da fare il punto 4 qui sotto (collaboratore GitHub).
+
+Se preferisci farlo a mano, ecco le 4 cose che servono:
+
+  1) La CARTELLA del progetto
+     - Fatti passare l'intera cartella "Sakarya - Hosting Dashboard GitHub"
+       (compresa la sottocartella nascosta ".git": e' importante).
+     - Mettila dove vuoi sul tuo PC (es. sul Desktop). NON serve OneDrive.
+
+  2) PYTHON
+     - Scaricalo da:  https://www.python.org/downloads/
+     - Durante l'installazione SPUNTA la casella "Add Python to PATH".
+     - Poi apri il Prompt dei comandi e scrivi:
+           pip install openpyxl
+       (serve a leggere il file Excel)
+
+  3) GIT
+     - Scaricalo da:  https://git-scm.com/download/win
+     - Installa lasciando le opzioni di default (Avanti, Avanti, Fine).
+
+  4) PERMESSO sul repository GitHub (te lo da' chi gestisce il progetto)
+     - Devi avere un account GitHub (gratis: https://github.com ).
+     - Comunica il tuo nome utente GitHub a chi gestisce il progetto:
+       ti aggiungera' come "collaboratore" del repository
+       "fanatics-hue/sakarya-dashboard".
+     - Senza questo permesso il pulsante "Pubblica" dara' errore.
+
+
+COME SI USA (dopo la preparazione)
+
+  - Doppio clic su:  AVVIA_GUI.bat
+    (si apre una finestra; niente schermo nero).
+
+  - Passo 1:  premi "Scegli file..." e seleziona l'Excel
+              "Sakarya Inspection Overall Status as of ...xlsx".
+
+  - Passo 2:  premi "1. Genera e verifica".
+              Controlla i numeri (KPI) che compaiono. Il banner in alto:
+                 VERDE  = tutto ok
+                 GIALLO = controlla i numeri
+                 ROSSO  = c'e' un problema (lo dice nel riquadro sotto)
+
+  - Passo 3:  se i numeri sono giusti, premi "2. Pubblica su GitHub"
+              e conferma. La prima volta GitHub ti chiede di fare il
+              LOGIN nel browser: accetta. Le volte dopo non lo richiede.
+
+  - Quando vedi il banner verde "FATTO!", la dashboard online si
+    aggiorna entro ~1 minuto. Aprila e ricarica con CTRL+F5.
+
+
+PROBLEMI FREQUENTI
+
+  - "Python non trovato"        -> reinstalla Python spuntando "Add to PATH".
+  - "Git non trovato"           -> installa Git (punto 3).
+  - "Push fallito / credenziali" -> non sei stato aggiunto come collaboratore
+                                     al repository (punto 4), oppure il login
+                                     GitHub e' stato annullato. Riprova.
+  - "STOP: fogli mancanti"      -> l'Excel scelto non e' quello giusto:
+                                     deve avere i fogli Dashboard, Repair,
+                                     Rejection.
+
+IMPORTANTE: non condividere la STESSA cartella OneDrive tra due PC
+pubblicando da entrambi: si creano conflitti. Ogni PC abbia la sua copia.
+
+============================================================

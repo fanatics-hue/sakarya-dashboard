@@ -4,10 +4,10 @@ Field,Value
 Purchase Order (PO) Qty,15462
 Incoming Plates,170
 Pipes Accepted,149
-Pipes Rejected,22
+Pipes Rejected,45
 Repair / Rework,4
 Overall Pass Rate (%),87.65
-Report Date,13/06/2026
+Report Date,20/06/2026
 
 Seq. N°,ITP Step,Section,Count,Yield vs Input (%),Loss vs Input,Cumul. Loss,Remarks
 1,Incoming Plate,Forming,170,100,0,0,
