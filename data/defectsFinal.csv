@@ -1,7 +1,7 @@
 Date,Shift,Pipe N°,Defect,Position,Extension,Remarks
 11/02/2026,1,26.4.2095,Burn Through,,,MPQT Pipe (NCR-001)
 23/02/2026,1,26.4.2094,Pore,,,2350x50mm
-23/02/2026,1,26.4.2250,WT Below Spec,,,8100x640mm
+23/02/2026,1,26.4.2250,Wall TKS Below the Spec.,,,8100x640mm
 10/03/2026,1,26.4.2114,Heated over 3 times,,,3LPP Tenaris Internal Trials
 10/03/2026,1,26.4.2185,Heated over 3 times,,,3LPP Tenaris Internal Trials
 10/03/2026,1,26.4.2107,Heated over 3 times,,,3LPP Tenaris Internal Trials
@@ -44,3 +44,36 @@ Date,Shift,Pipe N°,Defect,Position,Extension,Remarks
 20/06/2026,1,26.4.8283,Stamp Damage,,,NCR-11
 20/06/2026,1,26.4.8360,Stamp Damage,,,NCR-11
 20/06/2026,1,26.4.8507,Stamp Damage,,,NCR-11
+22/06/2026,1,26.4.8820,Weld Fail,,,
+24/06/2026,2 & 3,26.4.9073,MCE Mark,,,
+25/06/2026,1,26.4.8142,Final length below spec.,,,
+25/06/2026,1,26.4.8909,Final length below spec.,,,
+25/06/2026,1,26.4.8012,Wall TKS Below the Spec.,,,
+25/06/2026,1,26.4.9205,Tenaris Temp. Trial,,,
+25/06/2026,1,26.4.8954,MCE Mark,,,
+25/06/2026,3,26.4.8202,MCE Mark,,,
+25/06/2026,3,26.4.8262,MCE Mark,,,
+22/06/2026,1,26.4.8198,"""U"" Press Mark",,,NCR-11
+24/06/2026,2,26.4.8182,"""U"" Press Mark",,,NCR-11
+25/06/2026,3,26.4.8183,"""U"" Press Mark",,,NCR-11
+25/06/2026,1,26.4.8184,"""U"" Press Mark",,,NCR-11
+25/06/2026,2,26.4.8185,"""U"" Press Mark",,,NCR-11
+25/06/2026,3,26.4.8188,"""U"" Press Mark",,,NCR-11
+25/06/2026,1,26.4.8190,"""U"" Press Mark",,,NCR-11
+25/06/2026,2,26.4.8209,"""U"" Press Mark",,,NCR-11
+25/06/2026,3,26.4.8210,"""U"" Press Mark",,,NCR-11
+22/06/2026,1,26.4.8247,"""U"" Press Mark",,,NCR-11
+24/06/2026,2,26.4.8249,"""U"" Press Mark",,,NCR-11
+25/06/2026,3,26.4.8253,"""U"" Press Mark",,,NCR-11
+25/06/2026,1,26.4.8259,"""U"" Press Mark",,,NCR-11
+25/06/2026,2,26.4.8263,"""U"" Press Mark",,,NCR-11
+25/06/2026,3,26.4.8265,"""U"" Press Mark",,,NCR-11
+25/06/2026,1,26.4.8271,"""U"" Press Mark",,,NCR-11
+25/06/2026,2,26.4.8272,"""U"" Press Mark",,,NCR-11
+25/06/2026,3,26.4.8274,"""U"" Press Mark",,,NCR-11
+22/06/2026,1,26.4.8218,Bolt Mark,,,NCR-11
+24/06/2026,2,26.4.8548,Bolt Mark,,,NCR-11
+25/06/2026,3,26.4.8576,Bolt Mark,,,NCR-11
+25/06/2026,1,26.4.9356,Bolt Mark,,,NCR-11
+24/06/2026,1,26.4.8991,Stamp Damage,,,NCR-11
+25/06/2026,1,26.4.9001,Stamp Damage,,,NCR-11
