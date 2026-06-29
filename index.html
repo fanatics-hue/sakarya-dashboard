@@ -707,8 +707,7 @@ document.addEventListener("DOMContentLoaded", () => {
           <th onclick="sortT('finalTable',1)">Shift</th>
           <th onclick="sortT('finalTable',2)">Pipe N°</th>
           <th onclick="sortT('finalTable',3)">Defect ↕</th>
-          <th onclick="sortT('finalTable',4)">Position (mm) ↕</th>
-          <th onclick="sortT('finalTable',5)">Extension (mm) ↕</th>
+          <th onclick="sortT('finalTable',4)">Remarks ↕</th>
           <th>Severity</th>
         </tr></thead>
         <tbody id="finalTbody"></tbody>
@@ -1133,19 +1132,30 @@ function updateDefectTable(defects, tbodyId) {
   tb.innerHTML = "";
   const isFinal = tbodyId === "finalTbody";
   if (defects.length === 0) {
-    tb.innerHTML = `<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:24px;font-size:12px;">No defects recorded yet</td></tr>`;
+    tb.innerHTML = `<tr><td colspan="${isFinal?6:7}" style="text-align:center;color:var(--muted);padding:24px;font-size:12px;">No defects recorded yet</td></tr>`;
     return;
   }
   defects.forEach(d => {
     const sv = getSeverityBadge(d, isFinal);
-    tb.innerHTML += `<tr>
-      <td>${d.date}</td>
-      <td>${d.shift}</td>
-      <td style="font-family:'JetBrains Mono',monospace;font-size:10px">${d.pipe}</td>
-      <td>${d.defect}</td>
-      <td style="font-family:'JetBrains Mono',monospace">${d.pos||"—"}</td>
-      <td style="font-family:'JetBrains Mono',monospace">${d.ext||"—"}</td>
-      <td>${sv}</td></tr>`;
+    if (isFinal) {
+      // Rejection: Position/Extension non esistono nel foglio -> mostra Remarks
+      tb.innerHTML += `<tr>
+        <td>${d.date}</td>
+        <td>${d.shift}</td>
+        <td style="font-family:'JetBrains Mono',monospace;font-size:10px">${d.pipe}</td>
+        <td>${d.defect}</td>
+        <td>${d.remarks||"—"}</td>
+        <td>${sv}</td></tr>`;
+    } else {
+      tb.innerHTML += `<tr>
+        <td>${d.date}</td>
+        <td>${d.shift}</td>
+        <td style="font-family:'JetBrains Mono',monospace;font-size:10px">${d.pipe}</td>
+        <td>${d.defect}</td>
+        <td style="font-family:'JetBrains Mono',monospace">${d.pos||"—"}</td>
+        <td style="font-family:'JetBrains Mono',monospace">${d.ext||"—"}</td>
+        <td>${sv}</td></tr>`;
+    }
   });
 }
 
@@ -1694,9 +1704,9 @@ function printReport() {
 
   // Final defects
   const finalRows = Array.from(document.querySelectorAll("#finalTbody tr")).map(r => {
-    const c = r.querySelectorAll("td"); if (!c.length) return null;
+    const c = r.querySelectorAll("td"); if (c.length < 6) return null;
     return [c[0].textContent,c[1].textContent,c[2].textContent,
-            c[3].textContent,c[4].textContent,c[5].textContent,c[6].textContent.trim()];
+            c[3].textContent,c[4].textContent,c[5].textContent.trim()];
   }).filter(Boolean);
 
   // ITP Steps from live chart
@@ -1771,11 +1781,10 @@ function printReport() {
         <td>${r[0]}</td><td>${r[1]}</td>
         <td style="font-family:monospace;font-size:7.5px">${r[2]}</td>
         <td>${r[3]}</td>
-        <td style="text-align:center">${r[4]}</td>
-        <td style="text-align:center">${r[5]}</td>
-        <td style="text-align:center">${sevBadge(r[3],r[5])}</td>
+        <td>${r[4]}</td>
+        <td style="text-align:center">${sevBadge(r[3],0)}</td>
       </tr>`).join("")
-    : '<tr><td colspan="7" style="text-align:center;color:#94a3b8;padding:12px">No final defects recorded</td></tr>';
+    : '<tr><td colspan="6" style="text-align:center;color:#94a3b8;padding:12px">No final defects recorded</td></tr>';
 
   // Mini bar chart builder (pure HTML/CSS, no canvas)
   function miniBarChart(items, maxVal, barColor) {
@@ -1903,7 +1912,7 @@ function printReport() {
 
   <div class="sec">Final Inspection Defects</div>
   <table>
-    <thead><tr><th>Date</th><th>Shift</th><th>Pipe N°</th><th>Defect Description</th><th style="text-align:center">Pos (mm)</th><th style="text-align:center">Ext (mm)</th><th style="text-align:center">Severity</th></tr></thead>
+    <thead><tr><th>Date</th><th>Shift</th><th>Pipe N°</th><th>Defect Description</th><th>Remarks</th><th style="text-align:center">Severity</th></tr></thead>
     <tbody>${finalHtml}</tbody>
   </table>
 
