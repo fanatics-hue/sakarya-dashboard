@@ -1266,10 +1266,11 @@ function buildDynCharts(gridId, defects) {
 
   // Render each chart
   renderOrUpdate(gridId, `${gridId}-type`,
-    "Defect Types", "Count by Defect Type", 220,
+    "Defect Types", "Count by Defect Type", 320,
     "bar",
     { labels: typeLabels, datasets:[{ data:typeData, backgroundColor:typeLabels.map((_,i)=>DP_BG[i%DP_BG.length]), borderColor:typeLabels.map((_,i)=>DP_BD[i%DP_BD.length]), borderWidth:2, borderRadius:5 }] },
-    { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}, tooltip:{callbacks:{label:c=>` Count: ${c.raw}`}}}, scales:{y:{beginAtZero:true,ticks:{stepSize:1},grid:{color:"rgba(0,168,255,0.06)"}},x:{grid:{display:false},ticks:{font:{size:9}}}} }
+    { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}, tooltip:{callbacks:{label:c=>` Count: ${c.raw}`}}}, scales:{y:{beginAtZero:true,ticks:{stepSize:1},grid:{color:"rgba(0,168,255,0.06)"}},x:{grid:{display:false},ticks:{font:{size:10}}}} },
+    "span 2"
   );
 
   renderOrUpdate(gridId, `${gridId}-scatter`,
@@ -1294,7 +1295,7 @@ function buildDynCharts(gridId, defects) {
   );
 }
 
-function renderOrUpdate(gridId, chartId, eyebrow, title, height, type, data, options) {
+function renderOrUpdate(gridId, chartId, eyebrow, title, height, type, data, options, gridColumn) {
   let canvas = document.getElementById(chartId);
 
   if (!canvas) {
@@ -1302,6 +1303,7 @@ function renderOrUpdate(gridId, chartId, eyebrow, title, height, type, data, opt
     if (!grid) return;
     const card = document.createElement("div");
     card.className = "dyn-card";
+    if (gridColumn) card.style.gridColumn = gridColumn;
     card.innerHTML = `<div class="c-ey">${eyebrow}</div><div class="c-title">${title}</div><div class="cw" style="height:${height}px"><canvas id="${chartId}"></canvas></div>`;
     grid.appendChild(card);
     canvas = document.getElementById(chartId);
