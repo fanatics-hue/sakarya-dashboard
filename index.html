@@ -1226,19 +1226,32 @@ function buildDynCharts(gridId, defects) {
     return;
   }
 
-  // 1. Count by type
-  const typeCounts = {};
-  defects.forEach(d => { const k=(d.defect||"Unknown").trim(); typeCounts[k]=(typeCounts[k]||0)+1; });
-  const typeLabels = Object.keys(typeCounts);
-  const typeData   = Object.values(typeCounts);
+  // 1. Count by type — normalizzato case-insensitive (nel foglio "Underfill"
+  // e "underfill", "Slag Inclusion" e "slag Inclusion" ecc. sono lo stesso
+  // difetto scritto in modo incoerente: qui vengono raggruppati insieme,
+  // scegliendo come etichetta la variante con iniziale maiuscola)
+  const normKey = s => (s || "Unknown").trim().replace(/\s+/g, " ").toLowerCase();
+  const typeCounts  = {};
+  const typeDisplay = {};
+  defects.forEach(d => {
+    const raw = (d.defect || "Unknown").trim().replace(/\s+/g, " ");
+    const key = normKey(raw);
+    typeCounts[key] = (typeCounts[key] || 0) + 1;
+    if (!typeDisplay[key] || (/^[a-z]/.test(typeDisplay[key]) && /^[A-Z]/.test(raw))) {
+      typeDisplay[key] = raw;
+    }
+  });
+  const typeKeys   = Object.keys(typeCounts);
+  const typeLabels = typeKeys.map(k => typeDisplay[k]);
+  const typeData   = typeKeys.map(k => typeCounts[k]);
 
   // 2. Scatter positions — un dataset per tipo difetto (stessi colori del
   // grafico "Defect Types") cosi' i punti si distinguono invece di essere
   // tutti rossi e sovrapposti
-  const scatterDatasets = typeLabels.map((t, i) => ({
-    label: t,
+  const scatterDatasets = typeKeys.map((key, i) => ({
+    label: typeDisplay[key],
     data: defects.map((d, idx) => ({ x: idx + 1, y: d.pos, defect: d.defect }))
-                 .filter(p => (p.defect || "Unknown").trim() === t),
+                 .filter(p => normKey(p.defect) === key),
     backgroundColor: DP_BD[i % DP_BD.length].replace(",1)", ",.6)"),
     borderColor: DP_BD[i % DP_BD.length],
     borderWidth: 1.5,
