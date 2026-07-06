@@ -16,10 +16,13 @@ Avvio: doppio clic su AVVIA_GUI.bat  (oppure  start "" pythonw app_dashboard_gui
 import os
 import re
 import sys
+import json
+import time
 import glob
 import shutil
 import subprocess
 import threading
+import urllib.request
 import webbrowser
 from datetime import datetime
 
@@ -34,6 +37,7 @@ DATA_DIR = os.path.join(HERE, "data")
 PATTERN = "Sakarya Inspection Overall Status as of *.xlsx"
 FOGLI_RICHIESTI = ["Dashboard", "Repair", "Rejection"]
 DASHBOARD_URL = "https://fanatics-hue.github.io/sakarya-dashboard/"
+GH_API_REPO = "fanatics-hue/sakarya-dashboard"
 CRUSCOTTO = os.path.join(os.path.dirname(HERE), "Cruscotto Workspace.hta")
 
 # colori semaforo
@@ -55,6 +59,39 @@ def run(cmd):
                        creationflags=_NO_WIN, env=env)
     out = (p.stdout or "") + (p.stderr or "")
     return p.returncode, out.strip()
+
+
+def _api_get(url):
+    req = urllib.request.Request(
+        url, headers={"User-Agent": "sakarya-dashboard-gui",
+                       "Accept": "application/vnd.github+json"})
+    with urllib.request.urlopen(req, timeout=10) as r:
+        return json.loads(r.read().decode("utf-8"))
+
+
+def verifica_deploy_pages(sha, log_fn, max_tries=12, wait_s=5):
+    """Interroga l'API GitHub per sapere se il deploy Pages del commit
+    e' andato a buon fine. Ritorna (stato, log_url) con stato in
+    'success' / 'failure' / 'timeout'."""
+    for _ in range(max_tries):
+        time.sleep(wait_s)
+        try:
+            deployments = _api_get(
+                "https://api.github.com/repos/%s/deployments?per_page=5" % GH_API_REPO)
+            dep = next((d for d in deployments if d.get("sha") == sha), None)
+            if not dep:
+                continue
+            statuses = _api_get(
+                "https://api.github.com/repos/%s/deployments/%s/statuses"
+                % (GH_API_REPO, dep["id"]))
+            if not statuses:
+                continue
+            latest = statuses[0]
+            if latest.get("state") in ("success", "failure", "error"):
+                return latest["state"], latest.get("log_url")
+        except Exception as e:
+            log_fn("[avviso] verifica deploy: %s" % e)
+    return "timeout", None
 
 
 class App:
@@ -353,9 +390,31 @@ class App:
                 self.log("[ERRORE] Controlla login GitHub e connessione.")
                 return
 
-            self.set_banner("FATTO! Online tra ~1 min (ricarica con CTRL+F5).", C_OK)
-            self.log("=" * 56)
-            self.log("COMPLETATO. Dashboard: %s" % DASHBOARD_URL)
+            # 5. VERIFICA che GitHub Pages abbia davvero pubblicato
+            rc, sha = run(["git", "rev-parse", "HEAD"])
+            sha = sha.strip()
+            self.set_banner("Push ok. Verifico la pubblicazione online...", C_BUSY)
+            self.log("-" * 56)
+            self.log("Verifico che GitHub Pages abbia pubblicato (fino a 1 min)...")
+            stato, log_url = verifica_deploy_pages(sha, self.log)
+
+            if stato == "success":
+                self.set_banner("FATTO! Dashboard pubblicata (CTRL+F5 per vedere).", C_OK)
+                self.log("COMPLETATO. Dashboard: %s" % DASHBOARD_URL)
+            elif stato == "failure":
+                self.set_banner("ATTENZIONE: push ok ma la pubblicazione e' FALLITA.", C_ERR)
+                self.log("[ERRORE] Il push e' arrivato su GitHub ma la build di")
+                self.log("Pages e' fallita: il sito online NON e' stato aggiornato.")
+                self.log("CTRL+F5 non servira' a nulla finche' non risolvi.")
+                self.log("Come risolvere:")
+                self.log("  1) Apri: %s e clicca 'Re-run failed jobs'." % log_url)
+                self.log("  2) Se non basta, premi di nuovo '2. Pubblica su GitHub'")
+                self.log("     (un nuovo push forza un nuovo tentativo).")
+            else:
+                self.set_banner("Push ok, pubblicazione ancora in corso.", C_WARN)
+                self.log("Non sono riuscito a confermare la pubblicazione in tempo.")
+                self.log("Aspetta 1-2 minuti e ricarica con CTRL+F5. Se dopo 5 minuti")
+                self.log("i dati sono ancora vecchi, riprova a pubblicare.")
         finally:
             self.lock(False)
 

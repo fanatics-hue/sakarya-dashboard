@@ -44,8 +44,18 @@ def trovan_file_excel():
     if not candidati:
         log("[ERRORE] Nessun file '%s' trovato nella cartella." % PATTERN)
         sys.exit(1)
-    # piu' recente per data di modifica
-    f = max(candidati, key=os.path.getmtime)
+
+    def chiave_data(path):
+        # piu' recente per data "as of MM.DD.YYYY" nel nome file: non ci si
+        # affida al mtime, che puo' essere alterato da copie/sync e far
+        # scegliere per sbaglio un file di una settimana vecchia.
+        m = re.search(r"as of (\d{1,2})\.(\d{1,2})\.(\d{4})", os.path.basename(path))
+        if m:
+            mm, dd, yyyy = int(m.group(1)), int(m.group(2)), int(m.group(3))
+            return (yyyy, mm, dd)
+        return (0, 0, 0)
+
+    f = max(candidati, key=lambda p: (chiave_data(p), os.path.getmtime(p)))
     return f
 
 
