@@ -1232,8 +1232,19 @@ function buildDynCharts(gridId, defects) {
   const typeLabels = Object.keys(typeCounts);
   const typeData   = Object.values(typeCounts);
 
-  // 2. Scatter positions
-  const scatterData = defects.map((d,i) => ({ x:i+1, y:d.pos }));
+  // 2. Scatter positions — un dataset per tipo difetto (stessi colori del
+  // grafico "Defect Types") cosi' i punti si distinguono invece di essere
+  // tutti rossi e sovrapposti
+  const scatterDatasets = typeLabels.map((t, i) => ({
+    label: t,
+    data: defects.map((d, idx) => ({ x: idx + 1, y: d.pos, defect: d.defect }))
+                 .filter(p => (p.defect || "Unknown").trim() === t),
+    backgroundColor: DP_BD[i % DP_BD.length].replace(",1)", ",.6)"),
+    borderColor: DP_BD[i % DP_BD.length],
+    borderWidth: 1.5,
+    pointRadius: 5,
+    pointHoverRadius: 8,
+  }));
 
   // 3. Timeline
   const dateCounts = {};
@@ -1264,8 +1275,8 @@ function buildDynCharts(gridId, defects) {
   renderOrUpdate(gridId, `${gridId}-scatter`,
     "Position Scatter", "Defect Position Along Pipe (mm)", 220,
     "scatter",
-    { datasets:[{ label:"Defects", data:scatterData, backgroundColor:RD, pointRadius:9, pointHoverRadius:12 }] },
-    { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}, tooltip:{callbacks:{label:c=>`${defects[c.dataIndex]?.defect||""} — Pos: ${c.raw.y}mm`}}}, scales:{x:{title:{display:true,text:"Defect #",color:"#4a7090"},ticks:{stepSize:1},grid:{color:"rgba(0,168,255,0.06)"}},y:{title:{display:true,text:"Position (mm)",color:"#4a7090"},grid:{color:"rgba(0,168,255,0.06)"}}} }
+    { datasets: scatterDatasets },
+    { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:true,position:"bottom",labels:{font:{size:9},padding:8,color:"#4a7090",boxWidth:8}}, tooltip:{callbacks:{label:c=>`${c.raw.defect||""} — Pos: ${c.raw.y}mm`}}}, scales:{x:{title:{display:true,text:"Defect #",color:"#4a7090"},ticks:{stepSize:1},grid:{color:"rgba(0,168,255,0.06)"}},y:{title:{display:true,text:"Position (mm)",color:"#4a7090"},grid:{color:"rgba(0,168,255,0.06)"}}} }
   );
 
   renderOrUpdate(gridId, `${gridId}-timeline`,
