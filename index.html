@@ -911,9 +911,11 @@ function applySummary(rows) {
   const gvPR = document.getElementById("g-passrate");
   const gvCP = document.getElementById("g-completion");
   const gvAC = document.getElementById("g-accepted");
+  const gvRep = document.getElementById("g-repair");
   if (gvPR) gvPR.textContent = passRate.toFixed(1) + "%";
   if (gvCP) gvCP.textContent = completion + "%";
   if (gvAC) gvAC.textContent = accepted + " / " + incoming;
+  if (gvRep) gvRep.textContent = repair.toLocaleString() + " pipes";
 
   // Summary strip
   setT("ss-total", incoming.toLocaleString());

@@ -95,12 +95,134 @@ def righe_foglio(ws, max_col=12):
     return [list(r) for r in ws.iter_rows(values_only=True)]
 
 
+# ======================================================================
+#  ITP Steps dal registro per-tubo (es. foglio "PO5021701")
+#
+#  Il foglio "Dashboard" ha una tabella ITP Steps mantenuta a mano/con
+#  formule Excel che puo' restare ferma a un numero vecchio di tubi
+#  (capitato: fermo a 170 mentre il registro reale ne aveva gia' 2602).
+#  Il registro per-tubo (una riga per tubo, una colonna per stazione,
+#  cella piena = stazione superata) e' la fonte diretta e sempre
+#  aggiornata: qui si CONTANO le celle piene per colonna invece di
+#  fidarsi del riepilogo.
+#
+#  Il nome del foglio cambia (es. col numero di lotto/PO Tenaris), quindi
+#  NON si cerca per nome ma per intestazione (riga 2: "Plate Entrance" +
+#  "Pipe Forming" sono la firma di questo registro).
+# ======================================================================
+ITP_STEPS_CANONICI = [
+    # (Seq, Nome step, Sezione, colonna nel registro per-tubo o None)
+    (1,  "Incoming Plate",       "Forming",             "Plate Entrance"),
+    (2,  "Pipe Forming",         "Forming",             "Pipe Forming"),
+    (3,  "Tack Welding",         "Forming",             "Tack Welding"),
+    (4,  "ID SAWL",              "Forming",             "ID SAWL"),
+    (5,  "OD SAWL",              "Forming",             "OD SAWL"),
+    (6,  "AUT1",                 "Welding & NDT",       "AUT1 in House"),
+    (7,  "Fluoroscopic",         "Welding & NDT",       "Fluoroscopic/TOFD In House"),
+    (8,  "Welding Repair",       "Welding & NDT",       "Repair"),
+    (9,  "MCE1",                 "Mechanical",          "MCE 1"),
+    (10, "MCE2",                 "Mechanical",          "MCE 2"),
+    (11, "MCE Inspection",       "Mechanical",          None),  # segue MCE1 (nessuna colonna propria nel registro)
+    (12, "Straightness Re-work", "Mechanical",          "Straighness Re-work"),
+    (13, "Hydro Test",           "Testing",             "Hydrostatic Test"),
+    (14, "AUT2",                 "Testing",             None),  # step non tracciato nel registro
+    (15, "Phase Arr.",           "Testing",             "Phase Array"),
+    (16, "MUT",                  "Testing",             "MUT"),
+    (17, "End UT",               "Testing",             "Pipe End UT"),
+    (18, "X-Ray",                "Testing",             "X-Ray"),
+    (19, "OoR Pipe Body",        "Dimensional & Final", "OoR Pipe Body"),
+    (20, "Dimensional 1",        "Dimensional & Final", "Dimensional 1"),
+    (21, "Dimensional 2",        "Dimensional & Final", "Dimensional 2"),
+    (22, "MPI",                  "Dimensional & Final", "MPI"),
+    (23, "UT DHC",               "Dimensional & Final", "UT DHC"),
+    (24, "Final Mark & Weigh",   "Dimensional & Final", "Final Marking and Weighing"),
+]
+
+
+def norm_pipe(pipe):
+    """Normalizza un Pipe N° (es. '26.4.002086' o '26.4.2086') in modo che i
+    due formati usati nei diversi fogli (con/senza zeri iniziali) coincidano."""
+    if not pipe:
+        return None
+    parts = str(pipe).strip().split(".")
+    if len(parts) >= 3:
+        try:
+            return "%d.%d.%d" % (int(parts[0]), int(parts[1]), int(parts[2]))
+        except ValueError:
+            return str(pipe).strip()
+    return str(pipe).strip()
+
+
+def trova_registro_per_tubo(wb):
+    """Trova il foglio registro per-tubo cercando la firma nell'intestazione
+    (non per nome: il nome del foglio cambia col lotto/PO Tenaris)."""
+    for name in wb.sheetnames:
+        rows = righe_foglio(wb[name])
+        for r in rows[:5]:
+            testo = {str(c).strip() for c in r if c}
+            if "Plate Entrance" in testo and "Pipe Forming" in testo:
+                return name, rows
+    return None, None
+
+
+def estrai_itp_da_registro(rows):
+    """Conta le celle piene per colonna nel registro per-tubo e mappa
+    sui 24 step canonici. Ritorna (lista_itp, incoming_count)."""
+    header = rows[1]
+    dati = rows[2:]
+    col_idx = {str(h).strip(): i for i, h in enumerate(header) if h}
+    conteggi = {}
+    for nome_col, i in col_idx.items():
+        conteggi[nome_col] = sum(1 for r in dati if i < len(r) and r[i] not in (None, ""))
+
+    incoming = conteggi.get("Plate Entrance", len(dati))
+    itp = []
+    for seq, name, group, col in ITP_STEPS_CANONICI:
+        if col is not None:
+            count = conteggi.get(col, 0)
+        elif name == "MCE Inspection":
+            count = conteggi.get("MCE 1", 0)
+        else:
+            count = 0
+        loss = max(0, incoming - count)
+        yld = round(count / incoming * 100, 2) if incoming else 0
+        itp.append([seq, name, group, count, yld, loss, loss, ""])
+    return itp, incoming
+
+
+def calcola_accepted(rows, rejected_pipes):
+    """'Pipes Accepted' = tubi che hanno finito 'Final Marking and Weighing'
+    nel registro per-tubo E NON sono nella lista dei rifiutati (foglio
+    Rejection). Necessario perche' il registro traccia solo l'avanzamento
+    per stazione, non l'esito finale accettato/rifiutato."""
+    header = rows[1]
+    # "Pipe N°" ha un problema di encoding nel file sorgente (il ° arriva
+    # come carattere corrotto): si individua per prefisso, escludendo le
+    # colonne "Pipe Number"/"Pipe Dimensional" del blocco del lotto corrente.
+    idx_pipe = next((i for i, h in enumerate(header)
+                      if h and str(h).lower().startswith("pipe n")
+                      and "number" not in str(h).lower()
+                      and "dimensional" not in str(h).lower()), None)
+    idx_final = next((i for i, h in enumerate(header)
+                       if h == "Final Marking and Weighing"), None)
+    dati = rows[2:]
+    if idx_pipe is None or idx_final is None:
+        return None
+    finished = set()
+    for r in dati:
+        if idx_pipe < len(r) and idx_final < len(r) and r[idx_pipe] and r[idx_final]:
+            finished.add(norm_pipe(r[idx_pipe]))
+    return len(finished - rejected_pipes)
+
+
 # ----------------------------------------------------------------------
 #  ESTRAZIONE
 # ----------------------------------------------------------------------
-def estrai_summary(wb, report_date, rejected):
+def estrai_summary(wb, report_date, rejected, rejected_pipes):
     """Dal foglio 'Dashboard': KPI + 24 ITP Steps.
-    `rejected` = n. righe tabella Rejection (calcolato a parte)."""
+    `rejected` = n. righe tabella Rejection (calcolato a parte).
+    `rejected_pipes` = set dei Pipe N° rifiutati (normalizzati), per calcolare
+    Accepted incrociandoli col registro per-tubo."""
     ws = wb["Dashboard"]
     rows = righe_foglio(ws)
 
@@ -117,54 +239,69 @@ def estrai_summary(wb, report_date, rejected):
                             return c2
         return None
 
-    total = cella_dopo_label("total pipes")
-    if total is None:
-        total = cella_dopo_label("input")
-    accepted = cella_dopo_label("accept")
-    passrate = cella_dopo_label("overall status")
+    # --- ITP Steps: dal registro per-tubo (conteggio diretto, sempre
+    # aggiornato) invece che dal riepilogo del foglio Dashboard, che puo'
+    # restare fermo a un numero vecchio di tubi (vedi commento sopra
+    # trova_registro_per_tubo).
+    foglio_reg, righe_reg = trova_registro_per_tubo(wb)
+    if foglio_reg:
+        itp, incoming = estrai_itp_da_registro(righe_reg)
+        repair_count = next((r[3] for r in itp if r[1] == "Welding Repair"), 0)
 
-    incoming = int(num(total, 0))
-    accepted = int(num(accepted, 0))
-    passrate = num(passrate, 0)
-    if passrate <= 1.5:          # memorizzato come frazione (0.8765)
-        passrate = passrate * 100
-    passrate = round(passrate, 2)
+        # Accepted = tubi che hanno finito il registro E non sono rifiutati
+        # (foglio Dashboard: stesso problema di staleness di Incoming Plates).
+        accepted = calcola_accepted(righe_reg, rejected_pipes)
+        if accepted is None:
+            accepted = int(num(cella_dopo_label("accept"), 0))
+        passrate = round(accepted / incoming * 100, 2) if incoming else 0
+    else:
+        # Fallback: nessun registro per-tubo trovato, si torna al vecchio
+        # riepilogo del foglio Dashboard (compatibilita' con Excel piu' vecchi).
+        accepted = int(num(cella_dopo_label("accept"), 0))
+        passrate = num(cella_dopo_label("overall status"), 0)
+        if passrate <= 1.5:      # memorizzato come frazione (0.8765)
+            passrate = passrate * 100
+        passrate = round(passrate, 2)
 
-    # --- ITP Steps: trova la riga header con "Seq"
-    itp = []
-    hdr_idx = -1
-    hdr_off = 0
-    for i, r in enumerate(rows):
-        for j, c in enumerate(r):
-            if c and "seq" in str(c).lower():
-                hdr_idx = i
-                hdr_off = j      # colonna dove inizia "Seq. n°"
+        total = cella_dopo_label("total pipes")
+        if total is None:
+            total = cella_dopo_label("input")
+        incoming = int(num(total, 0))
+
+        itp = []
+        hdr_idx = -1
+        hdr_off = 0
+        for i, r in enumerate(rows):
+            for j, c in enumerate(r):
+                if c and "seq" in str(c).lower():
+                    hdr_idx = i
+                    hdr_off = j
+                    break
+            if hdr_idx >= 0:
                 break
-        if hdr_idx >= 0:
-            break
 
-    repair_count = 0
-    if hdr_idx >= 0:
-        for r in rows[hdr_idx + 1:]:
-            base = r[hdr_off:]
-            seq = base[0] if len(base) > 0 else None
-            if not isinstance(seq, (int, float)):
-                continue
-            name = (base[1] if len(base) > 1 else "") or ""
-            group = (base[2] if len(base) > 2 else "") or ""
-            count = int(num(base[3] if len(base) > 3 else 0))
-            yld = num(base[4] if len(base) > 4 else 0)
-            if yld <= 1.5:
-                yld = yld * 100
-            loss = int(num(base[5] if len(base) > 5 else 0))
-            cumul = int(num(base[6] if len(base) > 6 else 0))
-            remarks = ""
-            if len(base) > 7 and base[7]:
-                remarks = str(base[7]).strip()
-            itp.append([int(seq), str(name).strip(), str(group).strip(),
-                        count, round(yld, 2), loss, cumul, remarks])
-            if "welding repair" in str(name).strip().lower():
-                repair_count = count
+        repair_count = 0
+        if hdr_idx >= 0:
+            for r in rows[hdr_idx + 1:]:
+                base = r[hdr_off:]
+                seq = base[0] if len(base) > 0 else None
+                if not isinstance(seq, (int, float)):
+                    continue
+                name = (base[1] if len(base) > 1 else "") or ""
+                group = (base[2] if len(base) > 2 else "") or ""
+                count = int(num(base[3] if len(base) > 3 else 0))
+                yld = num(base[4] if len(base) > 4 else 0)
+                if yld <= 1.5:
+                    yld = yld * 100
+                loss = int(num(base[5] if len(base) > 5 else 0))
+                cumul = int(num(base[6] if len(base) > 6 else 0))
+                remarks = ""
+                if len(base) > 7 and base[7]:
+                    remarks = str(base[7]).strip()
+                itp.append([int(seq), str(name).strip(), str(group).strip(),
+                            count, round(yld, 2), loss, cumul, remarks])
+                if "welding repair" in str(name).strip().lower():
+                    repair_count = count
 
     # ---- scrivi CSV nel formato che il dashboard si aspetta ----
     out = []
@@ -252,8 +389,9 @@ def main():
     weld = estrai_difetti(wb, "Repair", con_misure=True)
     final = estrai_difetti(wb, "Rejection", con_misure=False)
     rejected = len(final) - 1   # -1 per l'header
+    rejected_pipes = {norm_pipe(r[2]) for r in final[1:] if r[2]}
 
-    summary, stats = estrai_summary(wb, report_date, rejected)
+    summary, stats = estrai_summary(wb, report_date, rejected, rejected_pipes)
 
     scrivi_csv("summary.csv", summary)
     scrivi_csv("defectsWeld.csv", weld)
