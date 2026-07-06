@@ -104,10 +104,50 @@ if errorlevel 1 (
     exit /b 1
 )
 
+REM ---- 8. Verifica che GitHub Pages abbia davvero pubblicato ----
 echo.
-echo ============================================
-echo   COMPLETATO! Dashboard aggiornata online.
-echo   Ricarica con CTRL+F5 tra circa 1 minuto.
-echo ============================================
+echo [5/5] Verifica pubblicazione online ^(fino a 1 minuto^)...
+for /f "delims=" %%s in ('git rev-parse HEAD') do set "COMMITSHA=%%s"
+set "TMPVER=%TEMP%\sakarya_verify.txt"
+del "%TMPVER%" 2>nul
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0verifica_deploy_pages.ps1" -Sha "!COMMITSHA!" > "%TMPVER%" 2>nul
+
+set "ESITO="
+set "LOGURL="
+for /f "tokens=1,* delims=:" %%a in ('findstr /b "STATO: LOG:" "%TMPVER%"') do (
+    if "%%a"=="STATO" set "ESITO=%%b"
+    if "%%a"=="LOG" set "LOGURL=%%b"
+)
+del "%TMPVER%" 2>nul
+
+echo.
+if "!ESITO!"=="SUCCESS" (
+    echo ============================================
+    echo   COMPLETATO! Dashboard pubblicata online.
+    echo   Ricarica con CTRL+F5.
+    echo ============================================
+) else if "!ESITO!"=="FAILURE" (
+    echo ============================================
+    echo   [ATTENZIONE] Il push e' andato a buon fine ma
+    echo   la pubblicazione su GitHub Pages e' FALLITA.
+    echo   CTRL+F5 non servira' a nulla: il sito online
+    echo   non e' stato aggiornato.
+    echo.
+    echo   Come risolvere:
+    echo   1^) Apri questo link e clicca "Re-run failed jobs":
+    echo      !LOGURL!
+    echo   2^) Se non si risolve, rilancia questo stesso file
+    echo      ^(anche con lo stesso Excel^): forzera' un nuovo
+    echo      tentativo di pubblicazione.
+    echo ============================================
+) else (
+    echo ============================================
+    echo   Push completato, ma la pubblicazione e' ancora
+    echo   in corso o non e' stato possibile verificarla
+    echo   in tempo. Aspetta 1-2 minuti e ricarica con
+    echo   CTRL+F5. Se dopo 5 minuti i dati sono ancora
+    echo   vecchi, rilancia questo file.
+    echo ============================================
+)
 echo.
 pause
