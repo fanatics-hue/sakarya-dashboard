@@ -370,19 +370,6 @@ function updateBadges(weldCount, finalCount) {
 }
 
 /* ── Check pass rate alert ───────────────────────────────────── */
-function checkPassRateAlert(passRate) {
-  if (!document.body.classList.contains("admin-mode")) return;
-  const banner = document.getElementById("pass-rate-alert");
-  const text   = document.getElementById("alert-text");
-  if (!banner) return;
-  const THRESHOLD = 85;
-  if (passRate < THRESHOLD) {
-    banner.classList.add("show");
-    if (text) text.textContent = `⚠  Pass Rate (${passRate.toFixed(1)}%) sotto la soglia critica del ${THRESHOLD}% — verificare immediatamente`;
-  } else {
-    banner.classList.remove("show");
-  }
-}
 
 /* ── Export XLSX (via CSV trick with .xls extension) ─────────── */
 function exportXLSX(tbodyId, tableId, filename) {
@@ -552,8 +539,8 @@ document.addEventListener("DOMContentLoaded", () => {
       </div>
       <div class="kpi-bar"></div>
     </div>
-    <div class="kpi g-green"><div class="kpi-top"><div class="kpi-label">Pipes Ready for Acceptance</div><div class="kpi-icon">✓</div></div><div class="kpi-val" id="kpi-accepted">149</div><div class="kpi-sub" id="kpi-accepted-sub">Overall</div><div class="kpi-bar"></div></div>
-    <div class="kpi g-amber"><div class="kpi-top"><div class="kpi-label">Acceptance Rate</div><div class="kpi-icon">◎</div></div><div class="kpi-val" id="kpi-rate">87.6%</div><div class="kpi-sub" id="kpi-rate-sub">Ready for Acceptance / Inspected (149/170)</div><div class="kpi-bar"></div></div>
+    <div class="kpi g-green"><div class="kpi-top"><div class="kpi-label">Ready for Coating</div><div class="kpi-icon">✓</div></div><div class="kpi-val" id="kpi-accepted">149</div><div class="kpi-sub" id="kpi-accepted-sub">Overall</div><div class="kpi-bar"></div></div>
+    <div class="kpi g-amber"><div class="kpi-top"><div class="kpi-label">Coating Readiness Rate</div><div class="kpi-icon">◎</div></div><div class="kpi-val" id="kpi-rate">87.6%</div><div class="kpi-sub" id="kpi-rate-sub">Ready for Coating / Inspected (149/170)</div><div class="kpi-bar"></div></div>
     <div class="kpi g-red"><div class="kpi-top"><div class="kpi-label">Pipes Rejected</div><div class="kpi-icon">✕</div></div><div class="kpi-val" id="kpi-rejected">3</div><div class="kpi-sub">Definitively rejected</div><div class="kpi-bar"></div></div>
   </div>
   <!-- Gauge bars row -->
@@ -567,7 +554,7 @@ document.addEventListener("DOMContentLoaded", () => {
       <div class="gauge-track"><div class="gauge-fill" id="gf-completion" style="background:linear-gradient(90deg,#00a8ff,#00e5c8)"></div></div>
     </div>
     <div class="gauge-card">
-      <div class="gauge-label"><span class="gauge-name">Ready for Acceptance / Incoming</span><span class="gauge-val" id="g-accepted">149 / 170</span></div>
+      <div class="gauge-label"><span class="gauge-name">Ready for Coating / Incoming</span><span class="gauge-val" id="g-accepted">149 / 170</span></div>
       <div class="gauge-track"><div class="gauge-fill" id="gf-accepted" style="background:linear-gradient(90deg,#00e676,#00bfa5)"></div></div>
     </div>
     <div class="gauge-card">
@@ -581,14 +568,14 @@ document.addEventListener("DOMContentLoaded", () => {
     <div class="card">
       <div class="card-ey">Quality Split</div><div class="card-title">Accept · Repair · Reject</div>
       <div class="cw" style="height:190px;margin-bottom:20px"><canvas id="donutChart"></canvas></div>
-      <div class="pr"><span class="pr-lbl">Ready for Acceptance</span><div class="pr-track"><div class="pr-fill" id="pr-acc" style="width:87.65%;background:var(--green)"></div></div><span class="pr-val" id="pr-acc-v">149</span></div>
+      <div class="pr"><span class="pr-lbl">Ready for Coating</span><div class="pr-track"><div class="pr-fill" id="pr-acc" style="width:87.65%;background:var(--green)"></div></div><span class="pr-val" id="pr-acc-v">149</span></div>
       <div class="pr"><span class="pr-lbl">Repair / Rework</span><div class="pr-track"><div class="pr-fill" id="pr-rep" style="width:2.35%;background:var(--amber)"></div></div><span class="pr-val" id="pr-rep-v">4</span></div>
       <div class="pr"><span class="pr-lbl">Rejected</span><div class="pr-track"><div class="pr-fill" id="pr-rej" style="width:1.76%;background:var(--red)"></div></div><span class="pr-val" id="pr-rej-v">3</span></div>
     </div>
   </div>
   <div class="sstrip">
     <div class="ss"><div class="ss-lbl">Total Pipes</div><div class="ss-val" id="ss-total">170</div></div>
-    <div class="ss sc-g"><div class="ss-lbl">Ready for Acceptance</div><div class="ss-val" id="ss-acc">149</div></div>
+    <div class="ss sc-g"><div class="ss-lbl">Ready for Coating</div><div class="ss-val" id="ss-acc">149</div></div>
     <div class="ss sc-a"><div class="ss-lbl">Repair / Rework</div><div class="ss-val" id="ss-rep">4</div></div>
     <div class="ss sc-r"><div class="ss-lbl">Rejected</div><div class="ss-val" id="ss-rej">3</div></div>
   </div>
@@ -600,7 +587,7 @@ document.addEventListener("DOMContentLoaded", () => {
     </div>
     <div style="display:flex;gap:32px;margin-top:14px;">
       <div><div style="font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--muted);margin-bottom:4px;">PO Quantity</div><div id="po-qty" style="font-size:22px;font-weight:800;color:var(--text);">15,462</div></div>
-      <div><div style="font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--muted);margin-bottom:4px;">Ready for Acceptance</div><div id="po-accepted" style="font-size:22px;font-weight:800;color:var(--green);">149</div></div>
+      <div><div style="font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--muted);margin-bottom:4px;">Ready for Coating</div><div id="po-accepted" style="font-size:22px;font-weight:800;color:var(--green);">149</div></div>
       <div><div style="font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--muted);margin-bottom:4px;">Remaining</div><div id="po-remaining" style="font-size:22px;font-weight:800;color:var(--amber);">15,292</div></div>
       <div><div style="font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--muted);margin-bottom:4px;">Completion</div><div id="po-completion" style="font-size:22px;font-weight:800;color:var(--muted);">0.96%</div></div>
     </div>
@@ -877,8 +864,7 @@ function applySummary(rows) {
   animateCounter(document.getElementById("pr-acc-v"),     accepted,  false, 900);
   animateCounter(document.getElementById("pr-rep-v"),     repair,    false, 700);
   animateCounter(document.getElementById("pr-rej-v"),     rejected,  false, 700);
-  checkPassRateAlert(passRate);
-  setT("kpi-rate-sub", `Ready for Acceptance / Inspected (${accepted}/${incoming})`);
+  setT("kpi-rate-sub", `Ready for Coating / Inspected (${accepted}/${incoming})`);
   if (!isNaN(acceptedLength)) {
     setT("kpi-accepted-sub", `${acceptedLength.toLocaleString("en-US",{maximumFractionDigits:0})} m total length`);
   }
@@ -1502,7 +1488,7 @@ window._stationChart = new Chart(document.getElementById("stationChart"), {
 // Donut
 window._donutChart = new Chart(document.getElementById("donutChart"), {
   type:"doughnut",
-  data:{ labels:["Ready for Acceptance","Repair/Rework","Rejected"], datasets:[{ data:[149,4,3], backgroundColor:["rgba(0,230,118,.75)","rgba(255,202,40,.75)","rgba(255,71,87,.75)"], borderColor:["#060d1a","#060d1a","#060d1a"], borderWidth:3, hoverOffset:6 }] },
+  data:{ labels:["Ready for Coating","Repair/Rework","Rejected"], datasets:[{ data:[149,4,3], backgroundColor:["rgba(0,230,118,.75)","rgba(255,202,40,.75)","rgba(255,71,87,.75)"], borderColor:["#060d1a","#060d1a","#060d1a"], borderWidth:3, hoverOffset:6 }] },
   options:{ cutout:"74%", plugins:{ legend:{position:"bottom",labels:{font:{size:9},padding:12,color:"#4a7090"}}, tooltip:{callbacks:{label:c=>` ${c.label}: ${c.raw} pipes`}} } }
 });
 
@@ -1895,7 +1881,7 @@ function printReport() {
   <div class="sec">Key Performance Indicators</div>
   <div class="kpi-row">
     <div class="kpi"><div class="v" style="color:#003a6b">${poQty}</div><div class="l">PO Quantity</div></div>
-    <div class="kpi"><div class="v" style="color:#00875a">${accepted}</div><div class="l">Ready for Acceptance</div><div class="l" style="margin-top:1px;color:#00875a;font-weight:700">${acceptedLen}</div></div>
+    <div class="kpi"><div class="v" style="color:#00875a">${accepted}</div><div class="l">Ready for Coating</div><div class="l" style="margin-top:1px;color:#00875a;font-weight:700">${acceptedLen}</div></div>
     <div class="kpi"><div class="v" style="color:#d97706">${passRate}</div><div class="l">Pass Rate</div></div>
     <div class="kpi"><div class="v" style="color:#dc2626">${rejected}</div><div class="l">Pipes Rejected</div></div>
   </div>
@@ -1911,7 +1897,7 @@ function printReport() {
     <div class="cbox">
       <div class="ct">Quality Split</div>
       <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">
-        <div style="width:60px;font-size:7.5px;color:#374151">Ready for Accept.</div>
+        <div style="width:60px;font-size:7.5px;color:#374151">Ready for Coating</div>
         <div style="flex:1;height:12px;background:#f1f5f9;border-radius:3px;overflow:hidden;"><div style="height:12px;width:${accPct}%;background:#00875a;border-radius:3px;"></div></div>
         <div style="width:28px;font-size:8px;font-weight:700;color:#00875a">${accepted}</div>
       </div>

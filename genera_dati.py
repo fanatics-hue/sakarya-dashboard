@@ -191,11 +191,11 @@ def estrai_itp_da_registro(rows):
 
 
 def calcola_accepted(rows):
-    """'Pipes Accepted' = tubi che hanno finito 'Final Marking and Weighing'
-    nel registro per-tubo. Stessa convenzione della cella "Total pipes
-    Accepted" nel foglio Dashboard: conta chi ha completato la produzione,
-    a prescindere da eventuali rifiuti successivi in ispezione finale
-    (scelta di Rino 2026-07-06, per restare allineati al foglio Excel).
+    """'Pipes Accepted' (etichettato "Ready to Coating" in index.html) = tubi
+    che hanno completato la colonna 'UT DHC' nel registro per-tubo (scelta di
+    Rino 2026-07-08: e' l'ultimo controllo NDT prima che il tubo sia pronto
+    per il coating 3LPP — NON piu' "Final Marking and Weighing", che e' l'ULTIMO
+    step dell'intero ITP e rappresenta un traguardo diverso, piu' a valle).
     Ritorna (n_accettati, lunghezza_totale_mm) — lunghezza_totale_mm e' None
     se non si trova una colonna lunghezza."""
     header = rows[1]
@@ -207,7 +207,7 @@ def calcola_accepted(rows):
                       and "number" not in str(h).lower()
                       and "dimensional" not in str(h).lower()), None)
     idx_final = next((i for i, h in enumerate(header)
-                       if h == "Final Marking and Weighing"), None)
+                       if h == "UT DHC"), None)
     dati = rows[2:]
     if idx_pipe is None or idx_final is None:
         return None, None
