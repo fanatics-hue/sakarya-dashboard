@@ -3,10 +3,11 @@ KEY PERFORMANCE INDICATORS,
 Field,Value
 Purchase Order (PO) Qty,15462
 Incoming Plates,2602
-Pipes Accepted,2167
+Pipes Accepted,2216
+Accepted Length (m),27309.96
 Pipes Rejected,140
 Repair / Rework,84
-Overall Pass Rate (%),83.28
+Overall Pass Rate (%),85.17
 Report Date,04/07/2026
 
 Seq. N°,ITP Step,Section,Count,Yield vs Input (%),Loss vs Input,Cumul. Loss,Remarks

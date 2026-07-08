@@ -190,11 +190,14 @@ def estrai_itp_da_registro(rows):
     return itp, incoming
 
 
-def calcola_accepted(rows, rejected_pipes):
+def calcola_accepted(rows):
     """'Pipes Accepted' = tubi che hanno finito 'Final Marking and Weighing'
-    nel registro per-tubo E NON sono nella lista dei rifiutati (foglio
-    Rejection). Necessario perche' il registro traccia solo l'avanzamento
-    per stazione, non l'esito finale accettato/rifiutato."""
+    nel registro per-tubo. Stessa convenzione della cella "Total pipes
+    Accepted" nel foglio Dashboard: conta chi ha completato la produzione,
+    a prescindere da eventuali rifiuti successivi in ispezione finale
+    (scelta di Rino 2026-07-06, per restare allineati al foglio Excel).
+    Ritorna (n_accettati, lunghezza_totale_mm) — lunghezza_totale_mm e' None
+    se non si trova una colonna lunghezza."""
     header = rows[1]
     # "Pipe N°" ha un problema di encoding nel file sorgente (il ° arriva
     # come carattere corrotto): si individua per prefisso, escludendo le
@@ -207,22 +210,33 @@ def calcola_accepted(rows, rejected_pipes):
                        if h == "Final Marking and Weighing"), None)
     dati = rows[2:]
     if idx_pipe is None or idx_final is None:
-        return None
+        return None, None
+
+    # colonna lunghezza del REGISTRO CUMULATIVO (dopo idx_pipe): nel file
+    # con doppio blocco esiste anche una "Pipe length" per il solo lotto
+    # corrente, prima di idx_pipe, che va ignorata.
+    idx_len = next((i for i, h in enumerate(header)
+                     if i > idx_pipe and h and "length" in str(h).lower()), None)
+
     finished = set()
+    lunghezza_totale = 0
     for r in dati:
         if idx_pipe < len(r) and idx_final < len(r) and r[idx_pipe] and r[idx_final]:
-            finished.add(norm_pipe(r[idx_pipe]))
-    return len(finished - rejected_pipes)
+            pipe = norm_pipe(r[idx_pipe])
+            if pipe in finished:
+                continue
+            finished.add(pipe)
+            if idx_len is not None and idx_len < len(r):
+                lunghezza_totale += num(r[idx_len], 0)
+    return len(finished), (lunghezza_totale if idx_len is not None else None)
 
 
 # ----------------------------------------------------------------------
 #  ESTRAZIONE
 # ----------------------------------------------------------------------
-def estrai_summary(wb, report_date, rejected, rejected_pipes):
+def estrai_summary(wb, report_date, rejected):
     """Dal foglio 'Dashboard': KPI + 24 ITP Steps.
-    `rejected` = n. righe tabella Rejection (calcolato a parte).
-    `rejected_pipes` = set dei Pipe N° rifiutati (normalizzati), per calcolare
-    Accepted incrociandoli col registro per-tubo."""
+    `rejected` = n. righe tabella Rejection (calcolato a parte)."""
     ws = wb["Dashboard"]
     rows = righe_foglio(ws)
 
@@ -248,9 +262,10 @@ def estrai_summary(wb, report_date, rejected, rejected_pipes):
         itp, incoming = estrai_itp_da_registro(righe_reg)
         repair_count = next((r[3] for r in itp if r[1] == "Welding Repair"), 0)
 
-        # Accepted = tubi che hanno finito il registro E non sono rifiutati
-        # (foglio Dashboard: stesso problema di staleness di Incoming Plates).
-        accepted = calcola_accepted(righe_reg, rejected_pipes)
+        # Accepted = tubi che hanno finito il registro (foglio Dashboard:
+        # stesso problema di staleness di Incoming Plates). lunghezza_mm =
+        # somma "Pipe length" dei tubi accettati (in mm, come nel registro).
+        accepted, lunghezza_mm = calcola_accepted(righe_reg)
         if accepted is None:
             accepted = int(num(cella_dopo_label("accept"), 0))
         passrate = round(accepted / incoming * 100, 2) if incoming else 0
@@ -258,6 +273,7 @@ def estrai_summary(wb, report_date, rejected, rejected_pipes):
         # Fallback: nessun registro per-tubo trovato, si torna al vecchio
         # riepilogo del foglio Dashboard (compatibilita' con Excel piu' vecchi).
         accepted = int(num(cella_dopo_label("accept"), 0))
+        lunghezza_mm = None
         passrate = num(cella_dopo_label("overall status"), 0)
         if passrate <= 1.5:      # memorizzato come frazione (0.8765)
             passrate = passrate * 100
@@ -308,9 +324,12 @@ def estrai_summary(wb, report_date, rejected, rejected_pipes):
     out.append(["SAKARYA GAS FIELD", ""])
     out.append(["KEY PERFORMANCE INDICATORS", ""])
     out.append(["Field", "Value"])
+    lunghezza_m = round(lunghezza_mm / 1000, 2) if lunghezza_mm else ""
+
     out.append(["Purchase Order (PO) Qty", PO_QTY])
     out.append(["Incoming Plates", incoming])
     out.append(["Pipes Accepted", accepted])
+    out.append(["Accepted Length (m)", lunghezza_m])
     out.append(["Pipes Rejected", rejected])
     out.append(["Repair / Rework", repair_count])
     out.append(["Overall Pass Rate (%)", passrate])
@@ -320,7 +339,7 @@ def estrai_summary(wb, report_date, rejected, rejected_pipes):
                 "Yield vs Input (%)", "Loss vs Input", "Cumul. Loss", "Remarks"])
     out.extend(itp)
 
-    return out, dict(incoming=incoming, accepted=accepted,
+    return out, dict(incoming=incoming, accepted=accepted, lunghezza_m=lunghezza_m,
                      passrate=passrate, repair=repair_count, itp=len(itp))
 
 
@@ -389,9 +408,8 @@ def main():
     weld = estrai_difetti(wb, "Repair", con_misure=True)
     final = estrai_difetti(wb, "Rejection", con_misure=False)
     rejected = len(final) - 1   # -1 per l'header
-    rejected_pipes = {norm_pipe(r[2]) for r in final[1:] if r[2]}
 
-    summary, stats = estrai_summary(wb, report_date, rejected, rejected_pipes)
+    summary, stats = estrai_summary(wb, report_date, rejected)
 
     scrivi_csv("summary.csv", summary)
     scrivi_csv("defectsWeld.csv", weld)
@@ -401,6 +419,7 @@ def main():
     log("KPI estratti:")
     log("  Incoming Plates  : %s" % stats["incoming"])
     log("  Pipes Accepted   : %s" % stats["accepted"])
+    log("  Accepted Length  : %s m" % stats["lunghezza_m"])
     log("  Pass Rate        : %s %%" % stats["passrate"])
     log("  Repair / Rework  : %s" % stats["repair"])
     log("  ITP Steps        : %s righe" % stats["itp"])
