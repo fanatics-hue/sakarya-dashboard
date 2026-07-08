@@ -1936,6 +1936,7 @@ function printReport() {
   <table>
     <thead><tr><th>Date</th><th>Shift</th><th>Pipe N°</th><th>Defect Description</th><th style="text-align:center">Pos (mm)</th><th style="text-align:center">Ext (mm)</th><th style="text-align:center">Severity</th></tr></thead>
     <tbody>${weldHtml}</tbody>
+    <tfoot><tr><td colspan="7" style="padding:8px 10px;font-weight:700;background:#eef3fb;border-top:2px solid #003a6b;">Total: ${weldRows.length} defect${weldRows.length===1?"":"s"}</td></tr></tfoot>
   </table>
 </div>
 
@@ -1953,6 +1954,7 @@ function printReport() {
   <table>
     <thead><tr><th>Date</th><th>Shift</th><th>Pipe N°</th><th>Defect Description</th><th>Remarks</th><th style="text-align:center">Severity</th></tr></thead>
     <tbody>${finalHtml}</tbody>
+    <tfoot><tr><td colspan="6" style="padding:8px 10px;font-weight:700;background:#eef3fb;border-top:2px solid #003a6b;">Total: ${finalRows.length} defect${finalRows.length===1?"":"s"}</td></tr></tfoot>
   </table>
 
   <div class="sec" style="margin-top:12px">ITP Steps — Pass Rate (24 Steps)</div>
