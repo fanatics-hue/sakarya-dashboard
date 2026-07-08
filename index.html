@@ -1671,6 +1671,12 @@ function exportPDF(tableId, title) {
   const _today = `${_pad(_now.getDate())}/${_pad(_now.getMonth()+1)}/${_now.getFullYear()}`;
   const reportDate = (_rd && _rd.trim()) ? _rd.trim() : _today;
 
+  const totalRows = clone.querySelectorAll("tbody tr").length;
+  const colCount  = clone.querySelectorAll("thead th").length || 1;
+  const tfoot = document.createElement("tfoot");
+  tfoot.innerHTML = `<tr><td colspan="${colCount}" style="padding:8px 10px;font-weight:700;background:#eef3fb;border-top:2px solid #003a6b;">Total: ${totalRows} defect${totalRows===1?"":"s"}</td></tr>`;
+  clone.appendChild(tfoot);
+
   const html = `
     <!DOCTYPE html>
     <html>
@@ -1695,7 +1701,7 @@ function exportPDF(tableId, title) {
     </head>
     <body>
       <h2>Sakarya Gas Field — ${title}</h2>
-      <p class="sub">IQS S.r.l. · Report Date: ${reportDate} · Exported: ${new Date().toLocaleString()}</p>
+      <p class="sub">IQS S.r.l. · Report Date: ${reportDate} · Exported: ${new Date().toLocaleString()} · Total: ${totalRows} defect${totalRows===1?"":"s"}</p>
       ${clone.outerHTML}
       <div class="footer">IQS Confidential · Sakarya Phase 3 · www.iqs-ww.com</div>
     </body>
