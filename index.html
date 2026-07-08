@@ -1725,6 +1725,7 @@ function printReport() {
   const incoming   = get("ss-total");
   const passRate   = get("kpi-rate");
   const completion = get("po-completion");
+  const acceptedLen = get("kpi-accepted-sub");
   const logoSrc    = document.querySelector(".login-logo img")?.src || "";
 
   // Welding defects
@@ -1884,7 +1885,7 @@ function printReport() {
   <div class="sec">Key Performance Indicators</div>
   <div class="kpi-row">
     <div class="kpi"><div class="v" style="color:#003a6b">${poQty}</div><div class="l">PO Quantity</div></div>
-    <div class="kpi"><div class="v" style="color:#00875a">${accepted}</div><div class="l">Ready for Acceptance</div></div>
+    <div class="kpi"><div class="v" style="color:#00875a">${accepted}</div><div class="l">Ready for Acceptance</div><div class="l" style="margin-top:1px;color:#00875a;font-weight:700">${acceptedLen}</div></div>
     <div class="kpi"><div class="v" style="color:#d97706">${passRate}</div><div class="l">Pass Rate</div></div>
     <div class="kpi"><div class="v" style="color:#dc2626">${rejected}</div><div class="l">Pipes Rejected</div></div>
   </div>
