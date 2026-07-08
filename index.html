@@ -1107,6 +1107,10 @@ function isFinalHighSeverity(defect) {
   if (/\b(wall|wt|tks|thk|thickness)\b/.test(t) && t.includes("below") && t.includes("spec")) return true;
   // bocciatura prova Charpy/impact (es. "CVN Rejection")
   if (/\b(cvn|charpy)\b/.test(t)) return true;
+  // cricche (es. "Transversal Crack")
+  if (/crack/.test(t)) return true;
+  // bocciatura prova di trazione longitudinale (es. "Longitudinal Tensile Reject")
+  if (/tensile/.test(t) && /reject/.test(t)) return true;
   return false;
 }
 
