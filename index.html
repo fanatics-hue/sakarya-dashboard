@@ -56,6 +56,8 @@ main{padding:36px 52px;}
 .sl::after{content:'';flex:1;height:1px;background:var(--border);}
 .kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px;}
 .kpi{background:var(--s1);border:1px solid var(--border);border-radius:var(--r);padding:22px 26px 18px;position:relative;overflow:hidden;transition:transform .2s,border-color .2s,box-shadow .2s;}
+.kpi::after,.card::after,.dyn-card::after{content:'';position:absolute;inset:0;border-radius:inherit;background:radial-gradient(220px circle at var(--mx,50%) var(--my,50%),color-mix(in srgb,var(--blue) 16%,transparent),transparent 65%);opacity:0;transition:opacity .25s;pointer-events:none;}
+.kpi:hover::after,.card:hover::after,.dyn-card:hover::after{opacity:1;}
 .kpi:hover{transform:translateY(-3px);}
 .kpi:hover .kpi-bar{opacity:1;}
 .kpi.g-green:hover{border-color:rgba(0,230,118,.4);box-shadow:0 8px 24px rgba(0,230,118,.08);}
@@ -74,7 +76,7 @@ main{padding:36px 52px;}
 .g2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;}
 .g3{display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-bottom:16px;}
 .g1{margin-bottom:16px;}
-.card{background:var(--s1);border:1px solid var(--border);border-radius:var(--r);padding:26px;transition:border-color .2s,box-shadow .2s;}
+.card{background:var(--s1);border:1px solid var(--border);border-radius:var(--r);padding:26px;transition:border-color .2s,box-shadow .2s;position:relative;overflow:hidden;}
 .card:hover{border-color:rgba(0,168,255,.25);box-shadow:0 4px 20px rgba(0,168,255,.05);}
 .card-ey{font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:3px;text-transform:uppercase;color:var(--blue);margin-bottom:4px;}
 .card-title{font-size:17px;font-weight:700;color:var(--text);margin-bottom:20px;}
@@ -149,7 +151,7 @@ tbody td{padding:9px 16px;font-size:12px;color:var(--text);}
 .br{background:rgba(255,71,87,.1);color:var(--red);border:1px solid rgba(255,71,87,.2);}
 /* Dynamic charts grid */
 .dyn-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px;margin-bottom:16px;}
-.dyn-card{background:var(--s1);border:1px solid var(--border);border-radius:var(--r);padding:20px 22px;transition:border-color .2s;animation:fadeIn .4s ease;}
+.dyn-card{background:var(--s1);border:1px solid var(--border);border-radius:var(--r);padding:20px 22px;transition:border-color .2s;animation:fadeIn .4s ease;position:relative;overflow:hidden;}
 .dyn-card:hover{border-color:rgba(0,168,255,.25);}
 .dyn-card .c-ey{font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:3px;text-transform:uppercase;color:var(--blue);margin-bottom:4px;}
 .dyn-card .c-title{font-size:14px;font-weight:700;color:var(--text);margin-bottom:14px;}
@@ -454,6 +456,34 @@ document.addEventListener("DOMContentLoaded", () => {
             <input type="color" id="tp-color-input" value="#060d1a" style="width:150%;height:150%;margin:-25%;cursor:pointer;border:none;">
           </div>
           <span id="tp-color-hex" style="font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--blue);letter-spacing:1px;width:60px;">#060d1a</span>
+        </div>
+      </div>
+    </div>
+    <div style="position:relative;">
+      <button id="tweaks-btn" style="display:flex;align-items:center;gap:6px;padding:5px 12px;border-radius:6px;border:1px solid var(--border);background:rgba(0,168,255,0.05);color:var(--muted);font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;transition:all .2s;">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20v-6M12 10V4M5 20v-10M5 6V4M19 20v-4M19 12V4M2 14h6M16 8h6M2 6h6"/></svg>
+        Tweaks
+      </button>
+      <div id="tweaks-panel" style="display:none;position:absolute;top:calc(100% + 10px);right:0;background:var(--s1);border:1px solid rgba(0,168,255,0.2);border-radius:12px;padding:16px;width:264px;z-index:500;box-shadow:0 8px 32px rgba(0,0,0,0.4);">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:7px;letter-spacing:3px;text-transform:uppercase;color:var(--muted);margin-bottom:10px;">Palette accento</div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;" id="tw-accent-opts">
+          <div class="tw-accent-swatch" data-accent="ocean" style="cursor:pointer;border-radius:8px;height:36px;border:2px solid #00a8ff;background:linear-gradient(90deg,#00a8ff,#00e5c8);position:relative;" title="Ocean"><span style="position:absolute;bottom:2px;left:0;right:0;text-align:center;font-family:'JetBrains Mono',monospace;font-size:7px;color:rgba(0,0,0,0.55);">Ocean</span></div>
+          <div class="tw-accent-swatch" data-accent="ember" style="cursor:pointer;border-radius:8px;height:36px;border:2px solid transparent;background:linear-gradient(90deg,#ffb020,#ff6b35);position:relative;" title="Ember"><span style="position:absolute;bottom:2px;left:0;right:0;text-align:center;font-family:'JetBrains Mono',monospace;font-size:7px;color:rgba(0,0,0,0.55);">Ember</span></div>
+          <div class="tw-accent-swatch" data-accent="signal" style="cursor:pointer;border-radius:8px;height:36px;border:2px solid transparent;background:linear-gradient(90deg,#8b5cf6,#22d3ee);position:relative;" title="Signal"><span style="position:absolute;bottom:2px;left:0;right:0;text-align:center;font-family:'JetBrains Mono',monospace;font-size:7px;color:rgba(0,0,0,0.55);">Signal</span></div>
+        </div>
+        <div style="height:1px;background:rgba(0,168,255,0.08);margin-bottom:12px;"></div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:7px;letter-spacing:3px;text-transform:uppercase;color:var(--muted);margin-bottom:10px;">Densità</div>
+        <div style="display:flex;gap:6px;margin-bottom:14px;" id="tw-density-opts">
+          <div class="tw-opt" data-density="compact" style="flex:1;text-align:center;cursor:pointer;padding:7px 4px;border-radius:6px;border:1px solid var(--border);font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);">Compatta</div>
+          <div class="tw-opt active" data-density="standard" style="flex:1;text-align:center;cursor:pointer;padding:7px 4px;border-radius:6px;border:1px solid var(--blue);font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:1px;text-transform:uppercase;color:var(--blue);background:rgba(0,168,255,.08);">Standard</div>
+          <div class="tw-opt" data-density="spacious" style="flex:1;text-align:center;cursor:pointer;padding:7px 4px;border-radius:6px;border:1px solid var(--border);font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);">Ampia</div>
+        </div>
+        <div style="height:1px;background:rgba(0,168,255,0.08);margin-bottom:12px;"></div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:7px;letter-spacing:3px;text-transform:uppercase;color:var(--muted);margin-bottom:10px;">Movimento</div>
+        <div style="display:flex;gap:6px;" id="tw-motion-opts">
+          <div class="tw-opt" data-motion="calm" style="flex:1;text-align:center;cursor:pointer;padding:7px 4px;border-radius:6px;border:1px solid var(--border);font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);">Calmo</div>
+          <div class="tw-opt active" data-motion="standard" style="flex:1;text-align:center;cursor:pointer;padding:7px 4px;border-radius:6px;border:1px solid var(--blue);font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:1px;text-transform:uppercase;color:var(--blue);background:rgba(0,168,255,.08);">Standard</div>
+          <div class="tw-opt" data-motion="expressive" style="flex:1;text-align:center;cursor:pointer;padding:7px 4px;border-radius:6px;border:1px solid var(--border);font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);">Vivace</div>
         </div>
       </div>
     </div>
@@ -1065,6 +1095,7 @@ function applyDefectsWeld(rows) {
   }
 
   updateDefectTable(defects, "defectTbody");
+  window._weldDefects = defects;
   buildDynCharts("weld-charts-grid", defects);
   window._weldCount = defects.length;
 }
@@ -1089,6 +1120,7 @@ function applyDefectsFinal(rows) {
   }
 
   updateDefectTable(defects, "finalTbody");
+  window._finalDefects = defects;
   buildDynCharts("final-charts-grid", defects);
   window._finalCount = defects.length;
 }
@@ -1198,7 +1230,7 @@ function updateDefectTable(defects, tbodyId) {
    ═══════════════════════════════════════════════════════════════════ */
 const _chartInst = {};  // registry: chartId → Chart instance (still used by Overview/ITP tabs)
 
-const BAR_PALETTE = ["#00a8ff","#00e5c8","#ffca28","#ff4757","#7c4dff","#00e676","rgba(255,148,38,1)","rgba(180,80,255,1)"];
+let BAR_PALETTE = ["#00a8ff","#00e5c8","#ffca28","#ff4757","#7c4dff","#00e676","rgba(255,148,38,1)","rgba(180,80,255,1)"];
 
 Chart.defaults.color="#4a7090";
 Chart.defaults.borderColor="rgba(0,168,255,0.1)";
@@ -1228,7 +1260,7 @@ function applyChartTheme(light) {
 
 
 const GR="rgba(0,230,118,1)", AM="rgba(255,202,40,1)", RD="rgba(255,71,87,1)";
-const BL="rgba(0,168,255,1)", TE="rgba(0,229,200,1)", PU="rgba(124,77,255,1)";
+let BL="rgba(0,168,255,1)", TE="rgba(0,229,200,1)", PU="rgba(124,77,255,1)";
 
 /* ═══════════════════════════════════════════════════════════════════
    SUMMARY PANEL — KPI cards + CSS bar charts for Defects Log / Final
@@ -2104,6 +2136,142 @@ document.querySelectorAll(".tab").forEach(t => {
     popup.classList.toggle("show", open);
   });
   document.addEventListener("click", () => { open = false; popup.classList.remove("show"); });
+})();
+
+// ── Tweaks panel: accent palette / density / motion ─────────────────
+(function(){
+  const KEY = "sakarya-tweaks-v1";
+  const ACCENTS = {
+    ocean:  { blue:"#00a8ff", teal:"#00e5c8", purple:"#7c4dff" },
+    ember:  { blue:"#ffb020", teal:"#ff6b35", purple:"#ff4757" },
+    signal: { blue:"#8b5cf6", teal:"#22d3ee", purple:"#ec4899" }
+  };
+  const DENSITY_CSS = {
+    compact: `main{padding:22px 32px !important;}
+      .kpi-grid{gap:10px !important;margin-bottom:16px !important;}
+      .kpi{padding:14px 18px 12px !important;}
+      .kpi-val{font-size:34px !important;}
+      .dyn-grid{gap:10px !important;margin-bottom:10px !important;}
+      .dyn-card{padding:14px 16px !important;}
+      .card{padding:16px !important;}
+      thead th{padding:7px 12px !important;}
+      tbody td{padding:6px 12px !important;}
+      .sl{margin-bottom:14px !important;}`,
+    standard: ``,
+    spacious: `main{padding:48px 68px !important;}
+      .kpi-grid{gap:20px !important;margin-bottom:32px !important;}
+      .kpi{padding:30px 34px 24px !important;}
+      .kpi-val{font-size:64px !important;}
+      .dyn-grid{gap:22px !important;margin-bottom:22px !important;}
+      .dyn-card{padding:28px 30px !important;}
+      .card{padding:36px !important;}
+      thead th{padding:13px 20px !important;}
+      tbody td{padding:12px 20px !important;}
+      .sl{margin-bottom:30px !important;}`
+  };
+  const MOTION_CSS = {
+    calm: `*{transition-duration:.1s !important;}
+      .tab-content{animation:none !important;}
+      .dyn-card{animation:none !important;}
+      .card:hover{transform:none !important;box-shadow:none !important;}
+      .kpi:hover{transform:none !important;}
+      .dyn-card:hover{border-color:var(--border) !important;}
+      .live-dot{animation-duration:3s !important;}`,
+    standard: ``,
+    expressive: `.card:hover{transform:translateY(-4px) scale(1.006) !important;box-shadow:0 14px 34px rgba(0,168,255,.18) !important;}
+      .dyn-card:hover{transform:translateY(-3px) !important;box-shadow:0 10px 26px rgba(0,168,255,.15) !important;}
+      .kpi:hover{transform:translateY(-5px) scale(1.01) !important;box-shadow:0 14px 30px rgba(0,168,255,.15) !important;}
+      .tab-content{animation-duration:.5s !important;}
+      .live-dot{animation-duration:1s !important;}
+      .tab:hover{color:var(--blue) !important;}`
+  };
+
+  function ensureStyleTag(id) {
+    let el = document.getElementById(id);
+    if (!el) { el = document.createElement("style"); el.id = id; document.head.appendChild(el); }
+    return el;
+  }
+
+  function applyAccent(name) {
+    const p = ACCENTS[name] || ACCENTS.ocean;
+    document.documentElement.style.setProperty("--blue", p.blue);
+    document.documentElement.style.setProperty("--teal", p.teal);
+    document.documentElement.style.setProperty("--purple", p.purple);
+    BL = p.blue; TE = p.teal; PU = p.purple;
+    BAR_PALETTE = [p.blue, p.teal, "#ffca28", "#ff4757", p.purple, "#00e676", "rgba(255,148,38,1)", "rgba(180,80,255,1)"];
+    document.querySelectorAll("#tw-accent-opts .tw-accent-swatch").forEach(s => {
+      s.style.borderColor = s.dataset.accent === name ? p.blue : "transparent";
+    });
+    // Re-render defect charts (CSS bars) with the new palette if data is cached
+    if (window._weldDefects) buildDynCharts("weld-charts-grid", window._weldDefects);
+    if (window._finalDefects) buildDynCharts("final-charts-grid", window._finalDefects);
+  }
+
+  function applyDensity(name) {
+    ensureStyleTag("tweak-density-style").textContent = DENSITY_CSS[name] || "";
+    document.querySelectorAll("#tw-density-opts .tw-opt").forEach(o => {
+      const active = o.dataset.density === name;
+      o.style.border = active ? "1px solid var(--blue)" : "1px solid var(--border)";
+      o.style.color = active ? "var(--blue)" : "var(--muted)";
+      o.style.background = active ? "rgba(0,168,255,.08)" : "transparent";
+    });
+  }
+
+  function applyMotion(name) {
+    ensureStyleTag("tweak-motion-style").textContent = MOTION_CSS[name] || "";
+    document.querySelectorAll("#tw-motion-opts .tw-opt").forEach(o => {
+      const active = o.dataset.motion === name;
+      o.style.border = active ? "1px solid var(--blue)" : "1px solid var(--border)";
+      o.style.color = active ? "var(--blue)" : "var(--muted)";
+      o.style.background = active ? "rgba(0,168,255,.08)" : "transparent";
+    });
+  }
+
+  function save(state) { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch(e){} }
+  function load() {
+    try { return JSON.parse(localStorage.getItem(KEY) || "{}"); } catch(e) { return {}; }
+  }
+
+  const state = Object.assign({ accent: "ocean", density: "standard", motion: "standard" }, load());
+  applyAccent(state.accent);
+  applyDensity(state.density);
+  applyMotion(state.motion);
+  document.querySelectorAll("#tw-accent-opts .tw-accent-swatch").forEach(s => {
+    if (s.dataset.accent === state.accent) s.style.borderColor = ACCENTS[state.accent].blue;
+  });
+
+  document.querySelectorAll("#tw-accent-opts .tw-accent-swatch").forEach(el => {
+    el.addEventListener("click", () => { state.accent = el.dataset.accent; applyAccent(state.accent); save(state); });
+  });
+  document.querySelectorAll("#tw-density-opts .tw-opt").forEach(el => {
+    el.addEventListener("click", () => { state.density = el.dataset.density; applyDensity(state.density); save(state); });
+  });
+  document.querySelectorAll("#tw-motion-opts .tw-opt").forEach(el => {
+    el.addEventListener("click", () => { state.motion = el.dataset.motion; applyMotion(state.motion); save(state); });
+  });
+
+  const btn = document.getElementById("tweaks-btn");
+  const panel = document.getElementById("tweaks-panel");
+  if (btn && panel) {
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      panel.style.display = panel.style.display === "none" ? "block" : "none";
+    });
+    document.addEventListener("click", (e) => {
+      if (!panel.contains(e.target) && e.target !== btn) panel.style.display = "none";
+    });
+  }
+})();
+
+// Cursor-following glow on cards (special effect)
+(function(){
+  document.addEventListener("mousemove", (e) => {
+    const el = e.target.closest(".kpi,.card,.dyn-card");
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    el.style.setProperty("--mx", (e.clientX - r.left) + "px");
+    el.style.setProperty("--my", (e.clientY - r.top) + "px");
+  }, { passive: true });
 })();
 
 // Theme picker
