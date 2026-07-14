@@ -377,7 +377,7 @@ function exportXLSX(tbodyId, tableId, filename) {
   if (!table) return;
   const headers = Array.from(table.querySelectorAll("thead th")).map(th => th.textContent.replace(/[↕]/g,"").trim());
   const rows    = Array.from(document.getElementById(tbodyId).querySelectorAll("tr"))
-                      .filter(r => r.style.display !== "none");
+                      .filter(r => r.dataset.filteredOut !== "1");
   if (!rows.length) { alert("No data to export."); return; }
   // Build tab-separated (TSV) which Excel opens natively
   const lines = [headers.join("	")];
@@ -607,7 +607,8 @@ document.addEventListener("DOMContentLoaded", () => {
 <!-- ═══════ DEFECTS LOG — DYNAMIC ═══════ -->
 <div class="tab-content" id="defects">
   <div class="sl">Defect Analysis — Welding</div>
-  <!-- Charts grid: populated dynamically from DEFECTS_WELD sheet -->
+  <!-- KPI strip + charts grid: populated dynamically from DEFECTS_WELD sheet -->
+  <div class="kpi-grid" id="weld-kpi-grid" style="margin-bottom:20px;"></div>
   <div class="dyn-grid" id="weld-charts-grid"></div>
   <!-- Table -->
   <div class="tw">
@@ -651,13 +652,22 @@ document.addEventListener("DOMContentLoaded", () => {
         <tbody id="defectTbody"></tbody>
       </table>
     </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;padding:12px 20px;border-top:1px solid var(--border);">
+      <div id="weldSevChips" style="display:flex;gap:8px;flex-wrap:wrap;"></div>
+      <div style="display:flex;align-items:center;gap:14px;">
+        <span id="weldPageInfo" style="font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--muted);"></span>
+        <button class="btn-export" onclick="changePage('weld',-1)">&larr; Prev</button>
+        <button class="btn-export" onclick="changePage('weld',1)">Next &rarr;</button>
+      </div>
+    </div>
   </div>
 </div>
 
 <!-- ═══════ FINAL INSPECTION — DYNAMIC ═══════ -->
 <div class="tab-content" id="final">
   <div class="sl">Final Inspection Results</div>
-  <!-- Charts grid: populated dynamically from DEFECTS_FINAL sheet -->
+  <!-- KPI strip + charts grid: populated dynamically from DEFECTS_FINAL sheet -->
+  <div class="kpi-grid" id="final-kpi-grid" style="margin-bottom:20px;"></div>
   <div class="dyn-grid" id="final-charts-grid"></div>
   <!-- Table -->
   <div class="tw">
@@ -699,6 +709,14 @@ document.addEventListener("DOMContentLoaded", () => {
         </tr></thead>
         <tbody id="finalTbody"></tbody>
       </table>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;padding:12px 20px;border-top:1px solid var(--border);">
+      <div id="finalSevChips" style="display:flex;gap:8px;flex-wrap:wrap;"></div>
+      <div style="display:flex;align-items:center;gap:14px;">
+        <span id="finalPageInfo" style="font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--muted);"></span>
+        <button class="btn-export" onclick="changePage('final',-1)">&larr; Prev</button>
+        <button class="btn-export" onclick="changePage('final',1)">Next &rarr;</button>
+      </div>
     </div>
   </div>
 </div>
@@ -1122,20 +1140,33 @@ function getSeverityBadge(d, isFinal) {
        : `<span class="badge bg">LOW</span>`;
 }
 
+function severityKeyOf(d, isFinal) {
+  if (isFinal) {
+    if (isFinalHighSeverity(d.defect)) return "high";
+    if (isFinalMedSeverity(d.defect)) return "med";
+    return "low";
+  }
+  return d.ext >= 200 ? "high" : d.ext >= 100 ? "med" : "low";
+}
+
 function updateDefectTable(defects, tbodyId) {
   const tb = document.getElementById(tbodyId);
   if (!tb) return;
   tb.innerHTML = "";
   const isFinal = tbodyId === "finalTbody";
+  const prefix = isFinal ? "final" : "weld";
   if (defects.length === 0) {
     tb.innerHTML = `<tr><td colspan="${isFinal?6:7}" style="text-align:center;color:var(--muted);padding:24px;font-size:12px;">No defects recorded yet</td></tr>`;
+    renderSevChips(prefix);
+    paginateRows(prefix, tbodyId);
     return;
   }
   defects.forEach(d => {
     const sv = getSeverityBadge(d, isFinal);
+    const sevKey = severityKeyOf(d, isFinal);
     if (isFinal) {
       // Rejection: Position/Extension non esistono nel foglio -> mostra Remarks
-      tb.innerHTML += `<tr>
+      tb.innerHTML += `<tr data-sev="${sevKey}">
         <td>${d.date}</td>
         <td>${d.shift}</td>
         <td style="font-family:'JetBrains Mono',monospace;font-size:10px">${d.pipe}</td>
@@ -1143,7 +1174,7 @@ function updateDefectTable(defects, tbodyId) {
         <td>${d.remarks||"—"}</td>
         <td>${sv}</td></tr>`;
     } else {
-      tb.innerHTML += `<tr>
+      tb.innerHTML += `<tr data-sev="${sevKey}">
         <td>${d.date}</td>
         <td>${d.shift}</td>
         <td style="font-family:'JetBrains Mono',monospace;font-size:10px">${d.pipe}</td>
@@ -1153,6 +1184,8 @@ function updateDefectTable(defects, tbodyId) {
         <td>${sv}</td></tr>`;
     }
   });
+  renderSevChips(prefix);
+  applyTableFilters(tbodyId, isFinal?"finalSearch":"defectSearch", isFinal?"finalDateFrom":"weldDateFrom", isFinal?"finalDateTo":"weldDateTo", isFinal?"finalDateCount":"weldDateCount");
 }
 
 /* ═══════════════════════════════════════════════════════════════════
@@ -1163,10 +1196,9 @@ function updateDefectTable(defects, tbodyId) {
    3. Defects over time (line)
    4. Extension distribution (doughnut)
    ═══════════════════════════════════════════════════════════════════ */
-const _chartInst = {};  // registry: chartId → Chart instance
+const _chartInst = {};  // registry: chartId → Chart instance (still used by Overview/ITP tabs)
 
-const DP_BG = ["rgba(255,71,87,.2)","rgba(255,202,40,.2)","rgba(0,168,255,.2)","rgba(0,230,118,.15)","rgba(124,77,255,.2)","rgba(0,229,200,.2)","rgba(255,148,38,.2)","rgba(180,80,255,.2)"];
-const DP_BD = ["rgba(255,71,87,1)","rgba(255,202,40,1)","rgba(0,168,255,1)","rgba(0,230,118,1)","rgba(124,77,255,1)","rgba(0,229,200,1)","rgba(255,148,38,1)","rgba(180,80,255,1)"];
+const BAR_PALETTE = ["#00a8ff","#00e5c8","#ffca28","#ff4757","#7c4dff","#00e676","rgba(255,148,38,1)","rgba(180,80,255,1)"];
 
 Chart.defaults.color="#4a7090";
 Chart.defaults.borderColor="rgba(0,168,255,0.1)";
@@ -1178,17 +1210,6 @@ function applyChartTheme(light) {
   const borderCol  = light ? "rgba(0,100,200,0.12)" : "rgba(0,168,255,0.1)";
   Chart.defaults.color = textColor;
   Chart.defaults.borderColor = borderCol;
-  // Update all registered chart instances
-  Object.values(_chartInst).forEach(ch => {
-    if (!ch) return;
-    ch.options.scales && Object.values(ch.options.scales).forEach(sc => {
-      if (sc.ticks) sc.ticks.color = textColor;
-      if (sc.grid)  sc.grid.color  = gridColor;
-      if (sc.title) sc.title.color = textColor;
-    });
-    if (ch.options.plugins?.legend?.labels) ch.options.plugins.legend.labels.color = textColor;
-    ch.update("none");
-  });
   [window._stationChart, window._rankingChart, window._donutChart].forEach(ch => {
     if (!ch) return;
     ch.options.scales && Object.values(ch.options.scales).forEach(sc => {
@@ -1209,9 +1230,102 @@ function applyChartTheme(light) {
 const GR="rgba(0,230,118,1)", AM="rgba(255,202,40,1)", RD="rgba(255,71,87,1)";
 const BL="rgba(0,168,255,1)", TE="rgba(0,229,200,1)", PU="rgba(124,77,255,1)";
 
+/* ═══════════════════════════════════════════════════════════════════
+   SUMMARY PANEL — KPI cards + CSS bar charts for Defects Log / Final
+   Inspection. Replaces the old canvas-based bar/scatter/timeline/donut
+   set: fewer, sorted, higher-signal charts instead of 100+ overplotted
+   points.
+   ═══════════════════════════════════════════════════════════════════ */
+function normDefectKey(s) { return (s || "Unknown").trim().replace(/\s+/g, " ").toLowerCase(); }
+
+function buildTypeBars(defects) {
+  const counts = {}, display = {};
+  defects.forEach(d => {
+    const raw = (d.defect || "Unknown").trim().replace(/\s+/g, " ");
+    const key = normDefectKey(raw);
+    counts[key] = (counts[key] || 0) + 1;
+    if (!display[key] || (/^[a-z]/.test(display[key]) && /^[A-Z]/.test(raw))) display[key] = raw;
+  });
+  let entries = Object.keys(counts).map(k => ({ label: display[k], count: counts[k] }));
+  entries.sort((a, b) => b.count - a.count);
+  const top = entries.slice(0, 8);
+  const restCount = entries.slice(8).reduce((s, e) => s + e.count, 0);
+  if (restCount > 0) top.push({ label: "Other", count: restCount });
+  const max = Math.max(1, ...top.map(e => e.count));
+  return top.map((e, i) => ({ label: e.label, count: e.count, pct: Math.round(e.count / max * 100), color: BAR_PALETTE[i % BAR_PALETTE.length] }));
+}
+
+function buildSevBars(defects, isFinal) {
+  const counts = { high: 0, med: 0, low: 0 };
+  defects.forEach(d => counts[severityKeyOf(d, isFinal)]++);
+  const max = Math.max(1, counts.high, counts.med, counts.low);
+  return [
+    { label: "High", count: counts.high, pct: Math.round(counts.high / max * 100), color: RD },
+    { label: "Med",  count: counts.med,  pct: Math.round(counts.med  / max * 100), color: AM },
+    { label: "Low",  count: counts.low,  pct: Math.round(counts.low  / max * 100), color: GR }
+  ];
+}
+
+function buildShiftBars(defects) {
+  const counts = {};
+  defects.forEach(d => {
+    const digits = ((d.shift || "").match(/\d+/g)) || ["?"];
+    digits.forEach(dg => { counts[dg] = (counts[dg] || 0) + 1; });
+  });
+  const labels = Object.keys(counts).sort();
+  const max = Math.max(1, ...labels.map(l => counts[l]));
+  return labels.map((l, i) => ({ label: l, count: counts[l], pct: Math.round(counts[l] / max * 100), color: BAR_PALETTE[i % BAR_PALETTE.length] }));
+}
+
+function buildPosBars(defects) {
+  if (!defects.length) return [];
+  const vals = defects.map(d => d.pos || 0);
+  const min = Math.min(...vals), max = Math.max(...vals);
+  const bucketCount = 6;
+  const size = Math.max(1, Math.ceil((max - min) / bucketCount / 100) * 100);
+  const buckets = Array.from({ length: bucketCount }, (_, i) => ({ lo: min + i * size, hi: min + (i + 1) * size, count: 0 }));
+  vals.forEach(v => {
+    let idx = Math.min(bucketCount - 1, Math.floor((v - min) / size));
+    if (idx < 0) idx = 0;
+    buckets[idx].count++;
+  });
+  const bmax = Math.max(1, ...buckets.map(b => b.count));
+  return buckets.map((b, i) => ({ label: Math.round(b.lo) + "-" + Math.round(b.hi), count: b.count, pct: Math.round(b.count / bmax * 100), color: BAR_PALETTE[i % BAR_PALETTE.length] }));
+}
+
+function barRows(bars, labelWidth) {
+  return bars.map(b => `
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+      <div style="width:${labelWidth}px;font-size:10.5px;color:#a9c4dc;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:0;" title="${b.label}">${b.label}</div>
+      <div style="flex:1;height:14px;background:rgba(255,255,255,.04);border-radius:3px;overflow:hidden;">
+        <div style="height:14px;border-radius:3px;background:${b.color};width:${b.pct}%;"></div>
+      </div>
+      <div style="width:24px;font-size:11px;font-weight:700;color:#ddeeff;text-align:right;flex-shrink:0;">${b.count}</div>
+    </div>`).join("");
+}
+
+function kpiCard(label, value, valueColor, sub, borderColor) {
+  return `<div style="background:var(--s1);border:1px solid ${borderColor||"var(--border)"};border-radius:var(--r);padding:20px 22px 16px;">
+    <div style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:10px;">${label}</div>
+    <div style="font-size:${value.length>6?20:40}px;font-weight:800;line-height:1.15;color:${valueColor};">${value}</div>
+    ${sub?`<div style="font-size:11px;color:var(--muted);margin-top:4px;">${sub}</div>`:""}
+  </div>`;
+}
+
+function chartCard(eyebrow, title, innerHtml) {
+  return `<div class="dyn-card">
+    <div class="c-ey">${eyebrow}</div>
+    <div class="c-title">${title}</div>
+    ${innerHtml}
+  </div>`;
+}
+
 function buildDynCharts(gridId, defects) {
   const grid = document.getElementById(gridId);
   if (!grid) return;
+  const isFinal = gridId.startsWith("final");
+  const kpiGridId = gridId.replace("-charts-grid", "-kpi-grid");
+  const kpiGrid = document.getElementById(kpiGridId);
 
   if (defects.length === 0) {
     grid.innerHTML = `<div class="dyn-card" style="grid-column:1/-1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:48px 24px;gap:14px;">
@@ -1219,120 +1333,48 @@ function buildDynCharts(gridId, defects) {
       <div style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--blue);">Nessun dato registrato</div>
       <div style="font-size:12px;color:var(--muted);text-align:center;max-width:340px;line-height:1.6;">Aggiungi righe nella scheda corrispondente del foglio Google per visualizzare automaticamente i grafici.</div>
     </div>`;
+    if (kpiGrid) kpiGrid.innerHTML = "";
     return;
   }
 
-  // 1. Count by type — normalizzato case-insensitive (nel foglio "Underfill"
-  // e "underfill", "Slag Inclusion" e "slag Inclusion" ecc. sono lo stesso
-  // difetto scritto in modo incoerente: qui vengono raggruppati insieme,
-  // scegliendo come etichetta la variante con iniziale maiuscola)
-  const normKey = s => (s || "Unknown").trim().replace(/\s+/g, " ").toLowerCase();
-  const typeCounts  = {};
-  const typeDisplay = {};
-  defects.forEach(d => {
-    const raw = (d.defect || "Unknown").trim().replace(/\s+/g, " ");
-    const key = normKey(raw);
-    typeCounts[key] = (typeCounts[key] || 0) + 1;
-    if (!typeDisplay[key] || (/^[a-z]/.test(typeDisplay[key]) && /^[A-Z]/.test(raw))) {
-      typeDisplay[key] = raw;
+  const typeBars = buildTypeBars(defects);
+  const sevBars = buildSevBars(defects, isFinal);
+  const shiftBars = buildShiftBars(defects);
+  const highCount = sevBars[0].count;
+
+  // KPI strip
+  if (kpiGrid) {
+    const topType = typeBars[0];
+    let kpis;
+    if (isFinal) {
+      const distinctPipes = new Set(defects.map(d => d.pipe)).size;
+      kpis = [
+        kpiCard("Total Defects", String(defects.length), "#00a8ff", null),
+        kpiCard("Top Defect Type", topType ? topType.label : "-", "#ddeeff", topType ? topType.count + " occurrences" : ""),
+        kpiCard("High Severity", String(highCount), "#ff4757", "Burn-through · cracks · wall t.", "rgba(255,71,87,0.2)"),
+        kpiCard("Distinct Pipes", String(distinctPipes), "#ddeeff", "affected pipes")
+      ];
+    } else {
+      const peak = shiftBars.reduce((a, b) => (b.count > (a ? a.count : -1) ? b : a), null);
+      kpis = [
+        kpiCard("Total Defects", String(defects.length), "#00a8ff", null),
+        kpiCard("Top Defect Type", topType ? topType.label : "-", "#ddeeff", topType ? topType.count + " occurrences" : ""),
+        kpiCard("High Severity", String(highCount), "#ff4757", "Extension ≥ 200mm", "rgba(255,71,87,0.2)"),
+        kpiCard("Peak Shift", peak ? "Shift " + peak.label : "-", "#ddeeff", peak ? peak.count + " defects logged" : "")
+      ];
     }
-  });
-  const typeKeys   = Object.keys(typeCounts);
-  const typeLabels = typeKeys.map(k => typeDisplay[k]);
-  const typeData   = typeKeys.map(k => typeCounts[k]);
-
-  // 2. Scatter positions — un dataset per tipo difetto (stessi colori del
-  // grafico "Defect Types") cosi' i punti si distinguono invece di essere
-  // tutti rossi e sovrapposti
-  const scatterDatasets = typeKeys.map((key, i) => ({
-    label: typeDisplay[key],
-    data: defects.map((d, idx) => ({ x: idx + 1, y: d.pos, defect: d.defect }))
-                 .filter(p => normKey(p.defect) === key),
-    backgroundColor: DP_BD[i % DP_BD.length].replace(",1)", ",.6)"),
-    borderColor: DP_BD[i % DP_BD.length],
-    borderWidth: 1.5,
-    pointRadius: 5,
-    pointHoverRadius: 8,
-  }));
-
-  // 3. Timeline
-  const dateCounts = {};
-  defects.forEach(d => { dateCounts[d.date]=(dateCounts[d.date]||0)+1; });
-  const dateLabels = Object.keys(dateCounts).sort((a,b)=>{
-    const parse = s => { const [d,m,y]=s.split("/"); return new Date(y,m-1,d); };
-    return parse(a)-parse(b);
-  });
-  const dateData = dateLabels.map(k => dateCounts[k]);
-
-  // 4. Extension buckets
-  const extB = {"0–50":0,"51–100":0,"101–200":0,"201+":0};
-  defects.forEach(d => {
-    if (d.ext<=50) extB["0–50"]++;
-    else if (d.ext<=100) extB["51–100"]++;
-    else if (d.ext<=200) extB["101–200"]++;
-    else extB["201+"]++;
-  });
-
-  // Render each chart
-  renderOrUpdate(gridId, `${gridId}-type`,
-    "Defect Types", "Count by Defect Type", 320,
-    "bar",
-    { labels: typeLabels, datasets:[{ data:typeData, backgroundColor:typeLabels.map((_,i)=>DP_BG[i%DP_BG.length]), borderColor:typeLabels.map((_,i)=>DP_BD[i%DP_BD.length]), borderWidth:2, borderRadius:5 }] },
-    { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}, tooltip:{callbacks:{label:c=>` Count: ${c.raw}`}}}, scales:{y:{beginAtZero:true,ticks:{stepSize:1},grid:{color:"rgba(0,168,255,0.06)"}},x:{grid:{display:false},ticks:{font:{size:10}}}} },
-    "span 2"
-  );
-
-  renderOrUpdate(gridId, `${gridId}-scatter`,
-    "Position Scatter", "Defect Position Along Pipe (mm)", 220,
-    "scatter",
-    { datasets: scatterDatasets },
-    { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:true,position:"bottom",labels:{font:{size:9},padding:8,color:"#4a7090",boxWidth:8}}, tooltip:{callbacks:{label:c=>`${c.raw.defect||""} — Pos: ${c.raw.y}mm`}}}, scales:{x:{title:{display:true,text:"Defect #",color:"#4a7090"},ticks:{stepSize:1},grid:{color:"rgba(0,168,255,0.06)"}},y:{title:{display:true,text:"Position (mm)",color:"#4a7090"},grid:{color:"rgba(0,168,255,0.06)"}}} }
-  );
-
-  renderOrUpdate(gridId, `${gridId}-timeline`,
-    "Defects Over Time", "Defects per Inspection Date", 220,
-    "line",
-    { labels:dateLabels, datasets:[{ label:"Defects", data:dateData, borderColor:AM, backgroundColor:"rgba(255,202,40,0.12)", fill:true, tension:0.35, pointBackgroundColor:AM, pointRadius:5 }] },
-    { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true,ticks:{stepSize:1},grid:{color:"rgba(0,168,255,0.06)"}},x:{grid:{display:false},ticks:{font:{size:9}}}} }
-  );
-
-  renderOrUpdate(gridId, `${gridId}-ext`,
-    "Extension Distribution", "Defect Extension Buckets (mm)", 220,
-    "doughnut",
-    { labels:Object.keys(extB), datasets:[{ data:Object.values(extB), backgroundColor:["rgba(0,230,118,.55)","rgba(255,202,40,.55)","rgba(255,148,38,.55)","rgba(255,71,87,.55)"], borderColor:[GR,AM,"rgba(255,148,38,1)",RD], borderWidth:2, hoverOffset:6 }] },
-    { cutout:"60%", responsive:true, maintainAspectRatio:false, plugins:{legend:{position:"bottom",labels:{font:{size:9},padding:10,color:"#4a7090"}}, tooltip:{callbacks:{label:c=>`${c.label}: ${c.raw} defect${c.raw!==1?"s":""}`}}} }
-  );
-}
-
-function renderOrUpdate(gridId, chartId, eyebrow, title, height, type, data, options, gridColumn) {
-  let canvas = document.getElementById(chartId);
-
-  if (!canvas) {
-    const grid = document.getElementById(gridId);
-    if (!grid) return;
-    const card = document.createElement("div");
-    card.className = "dyn-card";
-    if (gridColumn) card.style.gridColumn = gridColumn;
-    card.innerHTML = `<div class="c-ey">${eyebrow}</div><div class="c-title">${title}</div><div class="cw" style="height:${height}px"><canvas id="${chartId}"></canvas></div>`;
-    grid.appendChild(card);
-    canvas = document.getElementById(chartId);
+    kpiGrid.innerHTML = kpis.join("");
   }
 
-  if (_chartInst[chartId]) {
-    const ch = _chartInst[chartId];
-    ch.data.labels = data.labels;
-    // Sync dataset count
-    while (ch.data.datasets.length > data.datasets.length) ch.data.datasets.pop();
-    data.datasets.forEach((ds, i) => {
-      if (ch.data.datasets[i]) Object.assign(ch.data.datasets[i], ds);
-      else ch.data.datasets.push(ds);
-    });
-    ch.update("active");
-  } else {
-    const existing = Chart.getChart(canvas);
-    if (existing) existing.destroy();
-    _chartInst[chartId] = new Chart(canvas, { type, data, options });
+  const cards = [
+    chartCard("Defect Types", "Sorted by Frequency", barRows(typeBars, 100)),
+    chartCard("Severity Split", "High · Med · Low", barRows(sevBars, 44)),
+    chartCard("By Shift", "Defects per Shift", barRows(shiftBars.map(b => ({...b, label: "Shift " + b.label})), 60))
+  ];
+  if (!isFinal) {
+    cards.push(chartCard("Position Distribution", "Along Pipe Length (mm)", barRows(buildPosBars(defects), 100)));
   }
+  grid.innerHTML = cards.join("");
 }
 
 /* ── Station charts ─────────────────────────────────────────────── */
@@ -1522,7 +1564,65 @@ function parseRowDate(str) {
   return null;
 }
 
-// ── Apply both text search and date filter to a tbody ─────────────────
+// ── Pagination + severity filter state ─────────────────────────────
+const PAGE_SIZE = 12;
+const pageState = { weld: 1, final: 1 };
+const sevState  = { weld: "all", final: "all" };
+const SEV_UI = {
+  all:  { label: "All",  bg: "#00a8ff", color: "#060d1a", border: "#00a8ff" },
+  high: { label: "High", bg: "rgba(255,71,87,.1)",  color: "#ff4757", border: "rgba(255,71,87,.2)" },
+  med:  { label: "Med",  bg: "rgba(255,202,40,.1)", color: "#ffca28", border: "rgba(255,202,40,.2)" },
+  low:  { label: "Low",  bg: "rgba(0,230,118,.1)",  color: "#00e676", border: "rgba(0,230,118,.2)" }
+};
+
+function renderSevChips(prefix) {
+  const el = document.getElementById(prefix + "SevChips");
+  if (!el) return;
+  el.innerHTML = Object.keys(SEV_UI).map(key => {
+    const active = sevState[prefix] === key;
+    const u = SEV_UI[key];
+    const bg = active ? u.bg : "rgba(255,255,255,.03)";
+    const color = active ? u.color : "var(--muted)";
+    const border = active ? u.border : "var(--border)";
+    return `<div onclick="setSevFilter('${prefix}','${key}')" style="cursor:pointer;padding:6px 13px;border-radius:6px;font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:1px;font-weight:600;text-transform:uppercase;border:1px solid ${border};background:${bg};color:${color};">${u.label}</div>`;
+  }).join("");
+}
+
+function setSevFilter(prefix, key) {
+  sevState[prefix] = key;
+  pageState[prefix] = 1;
+  renderSevChips(prefix);
+  const tbodyId = prefix === "weld" ? "defectTbody" : "finalTbody";
+  const searchId = prefix === "weld" ? "defectSearch" : "finalSearch";
+  applyTableFilters(tbodyId, searchId, prefix + "DateFrom", prefix + "DateTo", prefix + "DateCount");
+}
+
+function changePage(prefix, delta) {
+  pageState[prefix] = Math.max(1, pageState[prefix] + delta);
+  paginateRows(prefix, prefix === "weld" ? "defectTbody" : "finalTbody");
+}
+
+// Applies pagination on top of the rows already marked via data-filtered-out
+function paginateRows(prefix, tbodyId) {
+  const rows = Array.from(document.querySelectorAll(`#${tbodyId} tr`));
+  const filtered = rows.filter(r => r.dataset.filteredOut !== "1");
+  const total = filtered.length;
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  if (pageState[prefix] > totalPages) pageState[prefix] = totalPages;
+  const page = pageState[prefix];
+  const start = (page - 1) * PAGE_SIZE;
+  const end = start + PAGE_SIZE;
+  filtered.forEach((r, i) => { r.style.display = (i >= start && i < end) ? "" : "none"; });
+  rows.filter(r => r.dataset.filteredOut === "1").forEach(r => { r.style.display = "none"; });
+  const info = document.getElementById(prefix + "PageInfo");
+  if (info) {
+    info.textContent = total
+      ? `Showing ${start + 1}-${Math.min(end, total)} of ${total} · Page ${page}/${totalPages}`
+      : "No matching defects";
+  }
+}
+
+// ── Apply text search + date filter + severity filter to a tbody ──────
 function applyTableFilters(tbodyId, searchId, fromId, toId, countId) {
   const q      = (document.getElementById(searchId)?.value || "").toLowerCase();
   const fromEl = document.getElementById(fromId);
@@ -1530,11 +1630,14 @@ function applyTableFilters(tbodyId, searchId, fromId, toId, countId) {
   const fromDate = fromEl?.value ? new Date(fromEl.value) : null;
   const toDate   = toEl?.value   ? new Date(toEl.value)   : null;
   if (toDate) toDate.setHours(23,59,59,999); // include full end day
+  const prefix = tbodyId === "finalTbody" ? "final" : "weld";
+  const sevFilter = sevState[prefix];
 
   let visible = 0;
   document.querySelectorAll(`#${tbodyId} tr`).forEach(r => {
     const txt = r.textContent.toLowerCase();
     const matchText = !q || txt.includes(q);
+    const matchSev = sevFilter === "all" || r.dataset.sev === sevFilter;
     let matchDate = true;
     if (fromDate || toDate) {
       const dateCell = r.cells[0]?.textContent.trim();
@@ -1546,15 +1649,17 @@ function applyTableFilters(tbodyId, searchId, fromId, toId, countId) {
         matchDate = false; // no parseable date → hide when filter active
       }
     }
-    const show = matchText && matchDate;
-    r.style.display = show ? "" : "none";
+    const show = matchText && matchDate && matchSev;
+    r.dataset.filteredOut = show ? "0" : "1";
     if (show) visible++;
   });
   const countEl = document.getElementById(countId);
   if (countEl) {
     const total = document.querySelectorAll(`#${tbodyId} tr`).length;
-    countEl.textContent = (fromDate || toDate || q) ? `${visible} / ${total}` : "";
+    countEl.textContent = (fromDate || toDate || q || sevFilter !== "all") ? `${visible} / ${total}` : "";
   }
+  pageState[prefix] = 1;
+  paginateRows(prefix, tbodyId);
 }
 
 // Table search
@@ -1601,6 +1706,9 @@ function sortT(id,col){
     return asc?av.localeCompare(bv):bv.localeCompare(av);
   });
   rows.forEach(r=>t.tBodies[0].appendChild(r));
+  const prefix = id === "finalTable" ? "final" : "weld";
+  pageState[prefix] = 1;
+  paginateRows(prefix, id === "finalTable" ? "finalTbody" : "defectTbody");
 }
 
 /* ═══════════════════════════════════════════════════════════════════
@@ -1619,7 +1727,7 @@ function exportCSV(tbodyId, filename) {
 
   // Get visible rows only (respect search filter)
   const rows = Array.from(tbody.querySelectorAll("tr"))
-    .filter(r => r.style.display !== "none");
+    .filter(r => r.dataset.filteredOut !== "1");
 
   if (rows.length === 0) { alert("No data to export."); return; }
 
@@ -1652,7 +1760,7 @@ function exportPDF(tableId, title) {
   const clone = table.cloneNode(true);
   Array.from(clone.querySelectorAll("tbody tr")).forEach(r => {
     const orig = table.querySelector(`tbody tr:nth-child(${r.rowIndex})`);
-    if (orig && orig.style.display === "none") r.remove();
+    if (orig && orig.dataset.filteredOut === "1") r.remove();
   });
 
   const _rd = document.getElementById("footer-date")?.textContent;
