@@ -3,15 +3,15 @@
 app_dashboard_gui.py - Sakarya QC Dashboard (finestra grafica)
 
 Flusso a 2 passi:
-  1) Scegli il file Excel  -> [1. Genera e verifica]  -> semaforo + anteprima KPI
-  2) [2. Pubblica su GitHub] -> git pull + commit + push -> dashboard online
+1) Scegli il file Excel -> [1. Genera e verifica] -> semaforo + anteprima KPI
+2) [2. Pubblica su GitHub] -> git pull + commit + push -> dashboard online
 
 - Se il file scelto non e' gia' nella cartella (o ha un nome diverso), viene
   copiato qui col nome corretto "Sakarya Inspection Overall Status as of MM.DD.YYYY.xlsx".
 - Prima del push fa SEMPRE git pull (anti-conflitto OneDrive / piu' PC).
 - Nessuna finestra DOS: tutto l'output e' nel riquadro log.
 
-Avvio: doppio clic su AVVIA_GUI.bat  (oppure  start "" pythonw app_dashboard_gui.py)
+Avvio: doppio clic su AVVIA_GUI.bat (oppure start "" pythonw app_dashboard_gui.py)
 """
 import os
 import re
@@ -50,16 +50,14 @@ C_BUSY = "#1a73e8"
 # nascondi la finestra nera dei processi git su Windows
 _NO_WIN = 0x08000000 if os.name == "nt" else 0
 
-
 def run(cmd):
     """Esegue un comando, ritorna (returncode, output_unito)."""
     env = dict(os.environ, PYTHONUTF8="1", PYTHONIOENCODING="utf-8")
     p = subprocess.run(cmd, cwd=HERE, capture_output=True, text=True,
-                       encoding="utf-8", errors="replace",
-                       creationflags=_NO_WIN, env=env)
+                        encoding="utf-8", errors="replace",
+                        creationflags=_NO_WIN, env=env)
     out = (p.stdout or "") + (p.stderr or "")
     return p.returncode, out.strip()
-
 
 def _api_get(url):
     req = urllib.request.Request(
@@ -67,7 +65,6 @@ def _api_get(url):
                        "Accept": "application/vnd.github+json"})
     with urllib.request.urlopen(req, timeout=10) as r:
         return json.loads(r.read().decode("utf-8"))
-
 
 def verifica_deploy_pages(sha, log_fn, max_tries=12, wait_s=5):
     """Interroga l'API GitHub per sapere se il deploy Pages del commit
@@ -93,11 +90,10 @@ def verifica_deploy_pages(sha, log_fn, max_tries=12, wait_s=5):
             log_fn("[avviso] verifica deploy: %s" % e)
     return "timeout", None
 
-
 class App:
     def __init__(self, root):
         self.root = root
-        self.excel_path = None      # file scelto dall'utente
+        self.excel_path = None  # file scelto dall'utente
         self.mm = self.dd = self.yyyy = None
         self.busy = False
 
@@ -107,8 +103,8 @@ class App:
 
         # ---- banner semaforo ----
         self.banner = tk.Label(root, text="Pronto. Scegli il file Excel per iniziare.",
-                               bg=C_IDLE, fg="white", font=("Segoe UI", 12, "bold"),
-                               anchor="w", padx=14, pady=12)
+                                bg=C_IDLE, fg="white", font=("Segoe UI", 12, "bold"),
+                                anchor="w", padx=14, pady=12)
         self.banner.pack(fill="x")
 
         body = ttk.Frame(root, padding=12)
@@ -134,11 +130,11 @@ class App:
         # ---- pulsanti azione ----
         rb = ttk.Frame(body)
         rb.pack(fill="x", pady=(0, 10))
-        self.btn_gen = ttk.Button(rb, text="1.  Genera e verifica",
-                                  command=self.t_genera, state="disabled")
+        self.btn_gen = ttk.Button(rb, text="1. Genera e verifica",
+                                   command=self.t_genera, state="disabled")
         self.btn_gen.pack(side="left")
-        self.btn_push = ttk.Button(rb, text="2.  Pubblica su GitHub",
-                                   command=self.t_pubblica, state="disabled")
+        self.btn_push = ttk.Button(rb, text="2. Pubblica su GitHub",
+                                    command=self.t_pubblica, state="disabled")
         self.btn_push.pack(side="left", padx=8)
 
         # ---- log ----
@@ -146,7 +142,7 @@ class App:
         wrap = ttk.Frame(body)
         wrap.pack(fill="both", expand=True)
         self.txt = tk.Text(wrap, height=12, wrap="word", font=("Consolas", 9),
-                           bg="#1e1e1e", fg="#d4d4d4", insertbackground="white")
+                            bg="#1e1e1e", fg="#d4d4d4", insertbackground="white")
         sb = ttk.Scrollbar(wrap, command=self.txt.yview)
         self.txt.configure(yscrollcommand=sb.set, state="disabled")
         self.txt.pack(side="left", fill="both", expand=True)
@@ -206,7 +202,7 @@ class App:
         self.ent_data.insert(0, "%02d.%02d.%d" % (self.mm, self.dd, self.yyyy))
         self.btn_gen.configure(state="normal")
         self.btn_push.configure(state="disabled")
-        self.set_banner("File scelto. Premi  '1. Genera e verifica'.", C_IDLE)
+        self.set_banner("File scelto. Premi '1. Genera e verifica'.", C_IDLE)
 
     def _leggi_data_campo(self):
         s = self.ent_data.get().strip()
@@ -267,7 +263,7 @@ class App:
             self.log("Genero i dati (genera_dati.py)...")
             rc, out = run([sys.executable, os.path.join(HERE, "genera_dati.py")])
             for line in out.splitlines():
-                self.log("   " + line)
+                self.log("  " + line)
             if rc != 0:
                 self.set_banner("STOP: generazione dati fallita.", C_ERR)
                 return
@@ -280,7 +276,7 @@ class App:
             if kpi.get("Incoming Plates", 0) in (0, None) or kpi.get("Overall Pass Rate (%)", 0) in (0, None):
                 self.set_banner("ATTENZIONE: controlla i numeri prima di pubblicare.", C_WARN)
             else:
-                self.set_banner("OK - dati pronti. Controlla i KPI, poi  '2. Pubblica'.", C_OK)
+                self.set_banner("OK - dati pronti. Controlla i KPI, poi '2. Pubblica'.", C_OK)
 
             self.btn_push.configure(state="normal")
         finally:
@@ -323,14 +319,14 @@ class App:
     def _mostra_kpi(self, kpi):
         self.log("-" * 56)
         self.log("ANTEPRIMA KPI (verifica prima di pubblicare):")
-        self.log("   PO Qty            : %s" % kpi.get("Purchase Order (PO) Qty", "?"))
-        self.log("   Incoming Plates   : %s" % kpi.get("Incoming Plates", "?"))
-        self.log("   Pipes Accepted    : %s" % kpi.get("Pipes Accepted", "?"))
-        self.log("   Pipes Rejected    : %s" % kpi.get("Pipes Rejected", "?"))
-        self.log("   Repair / Rework   : %s" % kpi.get("Repair / Rework", "?"))
-        self.log("   Overall Pass Rate : %s %%" % kpi.get("Overall Pass Rate (%)", "?"))
-        self.log("   ITP Steps         : %s righe" % kpi.get("ITP Steps", "?"))
-        self.log("   Report Date       : %s" % kpi.get("Report Date", "?"))
+        self.log("  PO Qty            : %s" % kpi.get("Purchase Order (PO) Qty", "?"))
+        self.log("  Incoming Plates   : %s" % kpi.get("Incoming Plates", "?"))
+        self.log("  Pipes Accepted    : %s" % kpi.get("Pipes Accepted", "?"))
+        self.log("  Pipes Rejected    : %s" % kpi.get("Pipes Rejected", "?"))
+        self.log("  Repair / Rework   : %s" % kpi.get("Repair / Rework", "?"))
+        self.log("  Overall Pass Rate : %s %%" % kpi.get("Overall Pass Rate (%)", "?"))
+        self.log("  ITP Steps         : %s righe" % kpi.get("ITP Steps", "?"))
+        self.log("  Report Date       : %s" % kpi.get("Report Date", "?"))
         self.log("-" * 56)
 
     # ----------------------------------------------------------------- pubblica
@@ -371,15 +367,37 @@ class App:
             # 2. ADD
             run(["git", "add", "-A"])
             rc, _ = run(["git", "diff", "--cached", "--quiet"])
-            if rc == 0:
-                self.set_banner("Niente da pubblicare: gia' aggiornata.", C_WARN)
-                self.log("Nessuna modifica rispetto a GitHub.")
-                return
+            has_changes = (rc != 0)
 
-            # 3. COMMIT
-            msg = "Aggiornamento dashboard: %02d.%02d.%d" % (self.mm, self.dd, self.yyyy)
-            rc, out = run(["git", "commit", "-m", msg])
-            self.log(out)
+            if has_changes:
+                # 3. COMMIT
+                msg = "Aggiornamento dashboard: %02d.%02d.%d" % (self.mm, self.dd, self.yyyy)
+                rc, out = run(["git", "commit", "-m", msg])
+                self.log(out)
+            else:
+                # Nessuna modifica nuova rispetto all'ultimo commit locale.
+                # ATTENZIONE: questo NON significa che GitHub sia aggiornato —
+                # un push precedente potrebbe essere fallito o essere stato
+                # interrotto (rete, credenziali, OneDrive che sincronizza la
+                # cartella .git), lasciando commit locali mai arrivati online.
+                # Controlliamo quindi se HEAD e' avanti rispetto a origin/<branch>
+                # (il pull appena fatto ha gia' aggiornato il ref origin/<branch>).
+                rc, ahead_out = run(["git", "rev-list", "--count",
+                                     "origin/%s..HEAD" % branch])
+                try:
+                    ahead_n = int(ahead_out.strip())
+                except (ValueError, TypeError):
+                    ahead_n = 0
+
+                if ahead_n == 0:
+                    self.set_banner("Niente da pubblicare: gia' aggiornata.", C_WARN)
+                    self.log("Nessuna modifica rispetto a GitHub.")
+                    return
+                else:
+                    self.log("Nessuna modifica nuova da committare, ma ho trovato "
+                              "%d commit locali non ancora su GitHub "
+                              "(probabile push precedente non riuscito) "
+                              "— li pubblico ora." % ahead_n)
 
             # 4. PUSH
             self.log("git push origin %s ..." % branch)
@@ -418,7 +436,6 @@ class App:
         finally:
             self.lock(False)
 
-
 def main():
     root = tk.Tk()
     try:
@@ -427,7 +444,6 @@ def main():
         pass
     App(root)
     root.mainloop()
-
 
 if __name__ == "__main__":
     main()
