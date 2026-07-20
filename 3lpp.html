@@ -6,7 +6,7 @@
 <title>Sakarya 3LPP Inspection - Weekly Summary</title>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#060d1a;--s1:#0c1929;--s2:#102035;--border:rgba(0,168,255,0.12);--blue:#00a8ff;--teal:#00e5c8;--green:#00e676;--amber:#ffca28;--red:#ff4757;--text:#ddeeff;--muted:#4a7090;--r:10px;}
+:root{--bg:#060d1a;--s1:#0c1929;--s2:#102035;--border:rgba(0,168,255,0.12);--blue:#00a8ff;--teal:#00e5c8;--purple:#7c4dff;--green:#00e676;--amber:#ffca28;--red:#ff4757;--text:#ddeeff;--muted:#4a7090;--r:10px;}
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding:0 0 60px;}
 header{display:flex;justify-content:space-between;align-items:center;padding:20px 52px;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:10px;}
@@ -80,9 +80,68 @@ ul.bullets li::before{content:'';position:absolute;left:0;top:7px;width:6px;heig
   .completion-pct{background:none;-webkit-text-fill-color:#0a3d62;color:#0a3d62;}
   .kpi,.chart-card,.card{page-break-inside:avoid;}
 }
+/* Tema chiaro: applicato in automatico se scelto nel dashboard principale
+   (localStorage "sak_theme", stesso meccanismo di index.html) - nessun
+   pulsante THEME qui, la pagina eredita e basta. */
+body.light{--border:rgba(0,100,200,0.15);--text:#0f172a;--muted:#64748b;}
+body.light header{background:rgba(240,244,248,0.9);}
+body.light .brand-title,body.light .completion-pct{background:none;-webkit-text-fill-color:#0050a0;color:#0050a0;}
+body.light .kpi-val{background:none;-webkit-text-fill-color:unset;color:#0050a0;}
+body.light .stackbar{background:rgba(0,0,0,.05);}
 </style>
 </head>
 <body>
+<script>
+// Eredita TEMA e TWEAKS scelti nel dashboard principale (index.html) -
+// stesse chiavi localStorage, nessun pulsante THEME/TWEAKS qui: la pagina
+// eredita e basta.
+(function(){
+  // ---- Tema (sfondo + chiaro/scuro), chiave "sak_theme" ----
+  try {
+    var saved = localStorage.getItem("sak_theme");
+    if (saved) {
+      var t = JSON.parse(saved);
+      var root = document.documentElement;
+      if (t.bg) root.style.setProperty("--bg", t.bg);
+      if (t.s1) root.style.setProperty("--s1", t.s1);
+      if (t.s2) root.style.setProperty("--s2", t.s2);
+      if (t.isLight) document.body.classList.add("light");
+    }
+  } catch(e) {}
+
+  // ---- Tweaks (palette accento / densita' / movimento), chiave "sakarya-tweaks-v1" ----
+  var ACCENTS = {
+    ocean:  { blue:"#00a8ff", teal:"#00e5c8", purple:"#7c4dff" },
+    ember:  { blue:"#ffb020", teal:"#ff6b35", purple:"#ff4757" },
+    signal: { blue:"#8b5cf6", teal:"#22d3ee", purple:"#ec4899" }
+  };
+  var DENSITY_CSS = {
+    compact: "main{padding:20px 32px !important;}.kpi-grid{gap:10px !important;}.kpi{padding:14px 16px !important;}.kpi-val{font-size:26px !important;}.chart-grid{gap:10px !important;}.chart-card{padding:16px 18px !important;}.card{padding:16px !important;}.sl{margin:20px 0 12px !important;}",
+    standard: "",
+    spacious: "main{padding:48px 68px !important;}.kpi-grid{gap:20px !important;}.kpi{padding:28px 32px !important;}.kpi-val{font-size:42px !important;}.chart-grid{gap:20px !important;}.chart-card{padding:30px 32px !important;}.card{padding:32px !important;}.sl{margin:36px 0 20px !important;}"
+  };
+  var MOTION_CSS = {
+    calm: "*{transition-duration:.1s !important;}.kpi:hover{transform:none !important;}.chart-card:hover{box-shadow:none !important;}",
+    standard: "",
+    expressive: ".kpi:hover{transform:translateY(-5px) scale(1.01) !important;box-shadow:0 14px 30px rgba(0,168,255,.15) !important;}.chart-card:hover{transform:translateY(-3px) !important;box-shadow:0 10px 26px rgba(0,168,255,.15) !important;}"
+  };
+  function styleTag(id) {
+    var el = document.getElementById(id);
+    if (!el) { el = document.createElement("style"); el.id = id; document.head.appendChild(el); }
+    return el;
+  }
+  try {
+    var tw = JSON.parse(localStorage.getItem("sakarya-tweaks-v1") || "{}");
+    var accent = ACCENTS[tw.accent] || ACCENTS.ocean;
+    var root2 = document.documentElement;
+    root2.style.setProperty("--blue", accent.blue);
+    root2.style.setProperty("--teal", accent.teal);
+    root2.style.setProperty("--purple", accent.purple);
+    styleTag("tweak-density-style").textContent = DENSITY_CSS[tw.density] || "";
+    styleTag("tweak-motion-style").textContent = MOTION_CSS[tw.motion] || "";
+  } catch(e) {}
+})();
+</script>
 <header>
   <div>
     <div class="brand-title">Sakarya Gas Field Development - 3LPP Inspection</div>
@@ -118,16 +177,16 @@ ul.bullets li::before{content:'';position:absolute;left:0;top:7px;width:6px;heig
       <div class="chart-title">Order Completion</div>
       <div class="completion-row">
         <div class="completion-pct">10.0%</div>
-        <div class="completion-bar-wrap"><div class="stackbar"><div class="seg" style="width:9.956%;background:#00e5c8;border-radius:4px 0 0 4px;" title="Completed: 1,593 (10.0%)"></div><div class="seg" style="width:90.044%;background:#00a8ff;border-radius:0 4px 4px 0;" title="Remaining: 14,407 (90.0%)"></div></div><div class="legend"><div class="legend-item"><span class="dot" style="background:#00e5c8;"></span>Completed <b>1,593</b><span class="lg-pct">10.0%</span></div><div class="legend-item"><span class="dot" style="background:#00a8ff;"></span>Remaining <b>14,407</b><span class="lg-pct">90.0%</span></div></div></div>
+        <div class="completion-bar-wrap"><div class="stackbar"><div class="seg" style="width:9.956%;background:var(--teal);border-radius:4px 0 0 4px;" title="Completed: 1,593 (10.0%)"></div><div class="seg" style="width:90.044%;background:var(--blue);border-radius:0 4px 4px 0;" title="Remaining: 14,407 (90.0%)"></div></div><div class="legend"><div class="legend-item"><span class="dot" style="background:var(--teal);"></span>Completed <b>1,593</b><span class="lg-pct">10.0%</span></div><div class="legend-item"><span class="dot" style="background:var(--blue);"></span>Remaining <b>14,407</b><span class="lg-pct">90.0%</span></div></div></div>
       </div>
     </div>
     <div class="chart-card">
       <div class="chart-title">Total Coated by Station</div>
-      <div class="stackbar"><div class="seg" style="width:55.029%;background:#00a8ff;border-radius:4px 0 0 4px;" title="VDI Station: 1,636 (55.0%)"></div><div class="seg" style="width:44.971%;background:#00e5c8;border-radius:0 4px 4px 0;" title="Final Station: 1,337 (45.0%)"></div></div><div class="legend"><div class="legend-item"><span class="dot" style="background:#00a8ff;"></span>VDI Station <b>1,636</b><span class="lg-pct">55.0%</span></div><div class="legend-item"><span class="dot" style="background:#00e5c8;"></span>Final Station <b>1,337</b><span class="lg-pct">45.0%</span></div></div>
+      <div class="stackbar"><div class="seg" style="width:55.029%;background:var(--blue);border-radius:4px 0 0 4px;" title="VDI Station: 1,636 (55.0%)"></div><div class="seg" style="width:44.971%;background:var(--teal);border-radius:0 4px 4px 0;" title="Final Station: 1,337 (45.0%)"></div></div><div class="legend"><div class="legend-item"><span class="dot" style="background:var(--blue);"></span>VDI Station <b>1,636</b><span class="lg-pct">55.0%</span></div><div class="legend-item"><span class="dot" style="background:var(--teal);"></span>Final Station <b>1,337</b><span class="lg-pct">45.0%</span></div></div>
     </div>
     <div class="chart-card">
       <div class="chart-title">Not Approved / Quarantine by Disposition</div>
-      <div class="stackbar"><div class="seg" style="width:41.573%;background:#00a8ff;border-radius:4px 0 0 4px;" title="Not Approved: 37 (41.6%)"></div><div class="seg" style="width:33.708%;background:#00e5c8;" title="On Hold: 30 (33.7%)"></div><div class="seg" style="width:24.719%;background:#7c4dff;border-radius:0 4px 4px 0;" title="Repair: 22 (24.7%)"></div></div><div class="legend"><div class="legend-item"><span class="dot" style="background:#00a8ff;"></span>Not Approved <b>37</b><span class="lg-pct">41.6%</span></div><div class="legend-item"><span class="dot" style="background:#00e5c8;"></span>On Hold <b>30</b><span class="lg-pct">33.7%</span></div><div class="legend-item"><span class="dot" style="background:#7c4dff;"></span>Repair <b>22</b><span class="lg-pct">24.7%</span></div></div>
+      <div class="stackbar"><div class="seg" style="width:41.573%;background:var(--blue);border-radius:4px 0 0 4px;" title="Not Approved: 37 (41.6%)"></div><div class="seg" style="width:33.708%;background:var(--teal);" title="On Hold: 30 (33.7%)"></div><div class="seg" style="width:24.719%;background:var(--purple);border-radius:0 4px 4px 0;" title="Repair: 22 (24.7%)"></div></div><div class="legend"><div class="legend-item"><span class="dot" style="background:var(--blue);"></span>Not Approved <b>37</b><span class="lg-pct">41.6%</span></div><div class="legend-item"><span class="dot" style="background:var(--teal);"></span>On Hold <b>30</b><span class="lg-pct">33.7%</span></div><div class="legend-item"><span class="dot" style="background:var(--purple);"></span>Repair <b>22</b><span class="lg-pct">24.7%</span></div></div>
     </div>
     <div class="chart-card wide">
       <div class="chart-title">Lab Test Results by Type</div>

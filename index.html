@@ -2300,7 +2300,9 @@ document.querySelectorAll(".tab").forEach(t => {
     document.body.classList.toggle("light", !!isLight);
     applyChartTheme(!!isLight);
     // Persist
-    try { sessionStorage.setItem("sak_theme", JSON.stringify({bg, s1, s2, isLight})); } catch(e){}
+    // localStorage (non sessionStorage): cosi' il tema scelto qui vale anche
+    // sulla pagina 3lpp.html, non solo in questa scheda/sessione.
+    try { localStorage.setItem("sak_theme", JSON.stringify({bg, s1, s2, isLight})); } catch(e){}
   }
 
   document.querySelectorAll(".tp-preset").forEach(el => {
@@ -2327,7 +2329,7 @@ document.querySelectorAll(".tab").forEach(t => {
 
   // Restore saved theme
   try {
-    const saved = sessionStorage.getItem("sak_theme");
+    const saved = localStorage.getItem("sak_theme");
     if (saved) {
       const t = JSON.parse(saved);
       applyBg(t.bg, t.s1, t.s2, t.isLight);

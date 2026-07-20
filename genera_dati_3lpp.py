@@ -289,18 +289,23 @@ def genera_html(kpi, report_date):
     bullets_html = "\n".join('<li>%s</li>' % b for b in bullets)
 
     # ---- Charts (thin stacked bars, verified compositions only) ----
+    # Colori come var(--blue/--teal/--purple), non esadecimale fisso: cosi'
+    # la palette accento scelta nei Tweaks del dashboard principale (ocean/
+    # ember/signal, ereditata anche qui) ricolora anche questi grafici. I
+    # colori di stato (Pass/Fail/In Progress sotto) restano fissi: sono
+    # semantici, non devono cambiare con l'accento.
     chart_completion = stacked_bar([
-        ("Completed", kpi["completed_qty"], "#00e5c8"),
-        ("Remaining", kpi["tot_pipes_to_finish"], "#00a8ff"),
+        ("Completed", kpi["completed_qty"], "var(--teal)"),
+        ("Remaining", kpi["tot_pipes_to_finish"], "var(--blue)"),
     ])
     chart_coated = stacked_bar([
-        ("VDI Station", kpi["coated_vdi"], "#00a8ff"),
-        ("Final Station", kpi["coated_fin"], "#00e5c8"),
+        ("VDI Station", kpi["coated_vdi"], "var(--blue)"),
+        ("Final Station", kpi["coated_fin"], "var(--teal)"),
     ])
     chart_quarantine = stacked_bar([
-        ("Not Approved", kpi["oh_not_approved"], "#00a8ff"),
-        ("On Hold", kpi["oh_on_hold"], "#00e5c8"),
-        ("Repair", kpi["oh_repair"], "#7c4dff"),
+        ("Not Approved", kpi["oh_not_approved"], "var(--blue)"),
+        ("On Hold", kpi["oh_on_hold"], "var(--teal)"),
+        ("Repair", kpi["oh_repair"], "var(--purple)"),
     ])
     lab_rows = []
     for name, p, f, prog, tot in (
@@ -330,7 +335,7 @@ def genera_html(kpi, report_date):
 <title>Sakarya 3LPP Inspection - Weekly Summary</title>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
-:root{{--bg:#060d1a;--s1:#0c1929;--s2:#102035;--border:rgba(0,168,255,0.12);--blue:#00a8ff;--teal:#00e5c8;--green:#00e676;--amber:#ffca28;--red:#ff4757;--text:#ddeeff;--muted:#4a7090;--r:10px;}}
+:root{{--bg:#060d1a;--s1:#0c1929;--s2:#102035;--border:rgba(0,168,255,0.12);--blue:#00a8ff;--teal:#00e5c8;--purple:#7c4dff;--green:#00e676;--amber:#ffca28;--red:#ff4757;--text:#ddeeff;--muted:#4a7090;--r:10px;}}
 *{{box-sizing:border-box;margin:0;padding:0;}}
 body{{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding:0 0 60px;}}
 header{{display:flex;justify-content:space-between;align-items:center;padding:20px 52px;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:10px;}}
@@ -404,9 +409,68 @@ ul.bullets li::before{{content:'';position:absolute;left:0;top:7px;width:6px;hei
   .completion-pct{{background:none;-webkit-text-fill-color:#0a3d62;color:#0a3d62;}}
   .kpi,.chart-card,.card{{page-break-inside:avoid;}}
 }}
+/* Tema chiaro: applicato in automatico se scelto nel dashboard principale
+   (localStorage "sak_theme", stesso meccanismo di index.html) - nessun
+   pulsante THEME qui, la pagina eredita e basta. */
+body.light{{--border:rgba(0,100,200,0.15);--text:#0f172a;--muted:#64748b;}}
+body.light header{{background:rgba(240,244,248,0.9);}}
+body.light .brand-title,body.light .completion-pct{{background:none;-webkit-text-fill-color:#0050a0;color:#0050a0;}}
+body.light .kpi-val{{background:none;-webkit-text-fill-color:unset;color:#0050a0;}}
+body.light .stackbar{{background:rgba(0,0,0,.05);}}
 </style>
 </head>
 <body>
+<script>
+// Eredita TEMA e TWEAKS scelti nel dashboard principale (index.html) -
+// stesse chiavi localStorage, nessun pulsante THEME/TWEAKS qui: la pagina
+// eredita e basta.
+(function(){{
+  // ---- Tema (sfondo + chiaro/scuro), chiave "sak_theme" ----
+  try {{
+    var saved = localStorage.getItem("sak_theme");
+    if (saved) {{
+      var t = JSON.parse(saved);
+      var root = document.documentElement;
+      if (t.bg) root.style.setProperty("--bg", t.bg);
+      if (t.s1) root.style.setProperty("--s1", t.s1);
+      if (t.s2) root.style.setProperty("--s2", t.s2);
+      if (t.isLight) document.body.classList.add("light");
+    }}
+  }} catch(e) {{}}
+
+  // ---- Tweaks (palette accento / densita' / movimento), chiave "sakarya-tweaks-v1" ----
+  var ACCENTS = {{
+    ocean:  {{ blue:"#00a8ff", teal:"#00e5c8", purple:"#7c4dff" }},
+    ember:  {{ blue:"#ffb020", teal:"#ff6b35", purple:"#ff4757" }},
+    signal: {{ blue:"#8b5cf6", teal:"#22d3ee", purple:"#ec4899" }}
+  }};
+  var DENSITY_CSS = {{
+    compact: "main{{padding:20px 32px !important;}}.kpi-grid{{gap:10px !important;}}.kpi{{padding:14px 16px !important;}}.kpi-val{{font-size:26px !important;}}.chart-grid{{gap:10px !important;}}.chart-card{{padding:16px 18px !important;}}.card{{padding:16px !important;}}.sl{{margin:20px 0 12px !important;}}",
+    standard: "",
+    spacious: "main{{padding:48px 68px !important;}}.kpi-grid{{gap:20px !important;}}.kpi{{padding:28px 32px !important;}}.kpi-val{{font-size:42px !important;}}.chart-grid{{gap:20px !important;}}.chart-card{{padding:30px 32px !important;}}.card{{padding:32px !important;}}.sl{{margin:36px 0 20px !important;}}"
+  }};
+  var MOTION_CSS = {{
+    calm: "*{{transition-duration:.1s !important;}}.kpi:hover{{transform:none !important;}}.chart-card:hover{{box-shadow:none !important;}}",
+    standard: "",
+    expressive: ".kpi:hover{{transform:translateY(-5px) scale(1.01) !important;box-shadow:0 14px 30px rgba(0,168,255,.15) !important;}}.chart-card:hover{{transform:translateY(-3px) !important;box-shadow:0 10px 26px rgba(0,168,255,.15) !important;}}"
+  }};
+  function styleTag(id) {{
+    var el = document.getElementById(id);
+    if (!el) {{ el = document.createElement("style"); el.id = id; document.head.appendChild(el); }}
+    return el;
+  }}
+  try {{
+    var tw = JSON.parse(localStorage.getItem("sakarya-tweaks-v1") || "{{}}");
+    var accent = ACCENTS[tw.accent] || ACCENTS.ocean;
+    var root2 = document.documentElement;
+    root2.style.setProperty("--blue", accent.blue);
+    root2.style.setProperty("--teal", accent.teal);
+    root2.style.setProperty("--purple", accent.purple);
+    styleTag("tweak-density-style").textContent = DENSITY_CSS[tw.density] || "";
+    styleTag("tweak-motion-style").textContent = MOTION_CSS[tw.motion] || "";
+  }} catch(e) {{}}
+}})();
+</script>
 <header>
   <div>
     <div class="brand-title">Sakarya Gas Field Development - 3LPP Inspection</div>
