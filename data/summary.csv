@@ -2,36 +2,36 @@ SAKARYA GAS FIELD,
 KEY PERFORMANCE INDICATORS,
 Field,Value
 Purchase Order (PO) Qty,15462
-Incoming Plates,3257
-Pipes Accepted,1787
-Accepted Length (m),22051.83
-Pipes Rejected,145
-Repair / Rework,106
-Overall Pass Rate (%),54.87
-Report Date,11/07/2026
+Incoming Plates,4044
+Pipes Accepted,2458
+Accepted Length (m),30345.94
+Pipes Rejected,149
+Repair / Rework,144
+Overall Pass Rate (%),60.78
+Report Date,18/07/2026
 
 Seq. N°,ITP Step,Section,Count,Yield vs Input (%),Loss vs Input,Cumul. Loss,Remarks
-1,Incoming Plate,Forming,3257,100.0,0,0,
-2,Pipe Forming,Forming,3159,96.99,98,98,
-3,Tack Welding,Forming,3147,96.62,110,110,
-4,ID SAWL,Forming,3111,95.52,146,146,
-5,OD SAWL,Forming,3072,94.32,185,185,
-6,AUT1,Welding & NDT,3055,93.8,202,202,
-7,Fluoroscopic,Welding & NDT,24,0.74,3233,3233,
-8,Welding Repair,Welding & NDT,106,3.25,3151,3151,
-9,MCE1,Mechanical,2450,75.22,807,807,
-10,MCE2,Mechanical,2971,91.22,286,286,
-11,MCE Inspection,Mechanical,2450,75.22,807,807,
-12,Straightness Re-work,Mechanical,28,0.86,3229,3229,
-13,Hydro Test,Testing,2963,90.97,294,294,
-14,AUT2,Testing,0,0.0,3257,3257,
-15,Phase Arr.,Testing,2957,90.79,300,300,
-16,MUT,Testing,2951,90.6,306,306,
-17,End UT,Testing,2936,90.14,321,321,
-18,X-Ray,Testing,2934,90.08,323,323,
-19,OoR Pipe Body,Dimensional & Final,2931,89.99,326,326,
-20,Dimensional 1,Dimensional & Final,2924,89.78,333,333,
-21,Dimensional 2,Dimensional & Final,2863,87.9,394,394,
-22,MPI,Dimensional & Final,2850,87.5,407,407,
-23,UT DHC,Dimensional & Final,1787,54.87,1470,1470,
-24,Final Mark & Weigh,Dimensional & Final,2840,87.2,417,417,
+1,Incoming Plate,Forming,4044,100.0,0,0,
+2,Pipe Forming,Forming,3998,98.86,46,46,
+3,Tack Welding,Forming,3976,98.32,68,68,
+4,ID SAWL,Forming,3937,97.35,107,107,
+5,OD SAWL,Forming,3882,95.99,162,162,
+6,AUT1,Welding & NDT,3871,95.72,173,173,
+7,Fluoroscopic,Welding & NDT,43,1.06,4001,4001,
+8,Welding Repair,Welding & NDT,144,3.56,3900,3900,
+9,MCE1,Mechanical,3131,77.42,913,913,
+10,MCE2,Mechanical,3764,93.08,280,280,
+11,MCE Inspection,Mechanical,3131,77.42,913,913,
+12,Straightness Re-work,Mechanical,28,0.69,4016,4016,
+13,Hydro Test,Testing,3754,92.83,290,290,
+14,AUT2,Testing,0,0.0,4044,4044,
+15,Phase Arr.,Testing,3719,91.96,325,325,
+16,MUT,Testing,3711,91.77,333,333,
+17,End UT,Testing,3697,91.42,347,347,
+18,X-Ray,Testing,3691,91.27,353,353,
+19,OoR Pipe Body,Dimensional & Final,3687,91.17,357,357,
+20,Dimensional 1,Dimensional & Final,3680,91.0,364,364,
+21,Dimensional 2,Dimensional & Final,3610,89.27,434,434,
+22,MPI,Dimensional & Final,3599,89.0,445,445,
+23,UT DHC,Dimensional & Final,2458,60.78,1586,1586,
+24,Final Mark & Weigh,Dimensional & Final,3585,88.65,459,459,
