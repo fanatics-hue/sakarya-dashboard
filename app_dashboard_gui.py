@@ -45,7 +45,7 @@ FOGLI_OVERALL = ["Dashboard", "Repair", "Rejection"]
 
 PATTERN_3LPP = "3LPP Sakarya Inspection Overall Status as of *.xlsm"
 FOGLI_3LPP = ["Production", "Lab Tests PPT", "Lab Tests Prod", "On hold",
-              "Stripping- heating & Steel Dam."]
+              "Stripping- heating & Steel Dam.", "Raw Material"]
 
 DASHBOARD_URL = "https://fanatics-hue.github.io/sakarya-dashboard/"
 PAGE_3LPP_URL = "https://fanatics-hue.github.io/sakarya-dashboard/3lpp.html"

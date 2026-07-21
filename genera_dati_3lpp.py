@@ -43,8 +43,9 @@ SH_LABPPT = "Lab Tests PPT"
 SH_LABPROD = "Lab Tests Prod"
 SH_ONHOLD = "On hold"
 SH_STRIP = "Stripping- heating & Steel Dam."
+SH_RAWMAT = "Raw Material"
 
-FOGLI_RICHIESTI = [SH_PROD, SH_LABPPT, SH_LABPROD, SH_ONHOLD, SH_STRIP]
+FOGLI_RICHIESTI = [SH_PROD, SH_LABPPT, SH_LABPROD, SH_ONHOLD, SH_STRIP, SH_RAWMAT]
 
 
 def log(msg):
@@ -112,6 +113,37 @@ def ultima_riga(ws, col, riga_ini):
 
 
 # ----------------------------------------------------------------------
+#  Raw Material: 5 componenti (Manufacturer/Trade Name/Batch ripetuti in
+#  colonne C:Q), una riga per data/turno. Si mostra lo stato ATTUALE
+#  (ultima riga = ultima consegna/turno registrato) + un avviso se un
+#  componente ha cambiato lotto durante il periodo (rilevante per
+#  tracciabilita').
+# ----------------------------------------------------------------------
+def estrai_raw_material(ws):
+    last = ultima_riga(ws, 1, 5)
+    if last < 5:
+        return [], None
+
+    slots = [(3, 4, 5), (6, 7, 8), (9, 10, 11), (12, 13, 14), (15, 16, 17)]
+    materials = []
+    for mc, tc, bc in slots:
+        manufacturer = str(ws.cell(row=last, column=mc).value or "").strip()
+        trade_name = str(ws.cell(row=last, column=tc).value or "").strip()
+        batch = str(ws.cell(row=last, column=bc).value or "").strip()
+        distinct_batches = set()
+        for r in range(5, last + 1):
+            b = ws.cell(row=r, column=bc).value
+            if b:
+                distinct_batches.add(str(b).strip())
+        materials.append(dict(
+            manufacturer=manufacturer, trade_name=trade_name, batch=batch,
+            batch_changed=len(distinct_batches) > 1,
+        ))
+    last_date = ws.cell(row=last, column=1).value
+    return materials, last_date
+
+
+# ----------------------------------------------------------------------
 #  Lab Tests: scansione colore cella (Pass/Fail/In Progress)
 # ----------------------------------------------------------------------
 def scan_lab_tests(ws):
@@ -167,6 +199,10 @@ def estrai_kpi(path):
     wsProd = wb[SH_PROD]
     tot_pipes_to_finish = num(wsProd["E3"].value)
     tot_item_qty = num(wsProd["B4"].value)
+    work_days_to_finish = num(wsProd["E4"].value)
+    production_estimation = wsProd["I3"].value
+    qcp_no = str(wsProd["D13"].value or "").strip()
+    od_wt = str(wsProd["F13"].value or "").strip()
     # "Pipes to Finish" e "Total item Qty" sono due totali dichiarati fianco a
     # fianco nello stesso foglio (Production!E3/B4, stessa riga di intestazione
     # del vendor): completato = item qty totale - pipe ancora da finire.
@@ -178,8 +214,11 @@ def estrai_kpi(path):
 
     coated_vdi = somma_colonna(wsProd, 4, r1_ini, r1_fin)     # D
     na_vdi = somma_colonna(wsProd, 5, r1_ini, r1_fin)         # E
+    repair_vdi = somma_colonna(wsProd, 6, r1_ini, r1_fin)     # F
+    app_vdi = somma_colonna(wsProd, 7, r1_ini, r1_fin)        # G
     coated_fin = somma_colonna(wsProd, 16, r2_ini, r2_fin)    # P
     na_fin = somma_colonna(wsProd, 17, r2_ini, r2_fin)        # Q
+    repair_fin = somma_colonna(wsProd, 18, r2_ini, r2_fin)    # R
     app_fin = somma_colonna(wsProd, 19, r2_ini, r2_fin)       # S
     coated_totale = coated_vdi + coated_fin
 
@@ -195,9 +234,42 @@ def estrai_kpi(path):
     oh_on_hold = conta_status(wsOH, 6, 5, last_oh, "On hold")
     oh_repair = conta_status(wsOH, 6, 5, last_oh, "Repair")
 
+    # Riepilogo manuale del vendor, riga 2 del foglio On hold (A2:H2):
+    # etichetta/valore alternati. Fonte DIVERSA dal log grezzo sopra (puo'
+    # non coincidere - "Not Approved" qui e' spesso 0 mentre il log ne
+    # conta di piu': e' un riepilogo a parte, non un totale alternativo).
+    oh_summary_row2 = []
+    for c in range(1, 9, 2):
+        label = wsOH.cell(row=2, column=c).value
+        value = wsOH.cell(row=2, column=c + 1).value
+        if label:
+            oh_summary_row2.append((str(label).strip(), num(value)))
+
+    # After Action (On hold!H5:H..) - esito dopo l'azione presa sul difetto
+    # (colonna E=Defect, F=Status, G=Work station, H=After Action, I=After
+    # Action Date): Approved/Not Approved/ancora vuoto (azione non ancora
+    # presa). E' un dato DIVERSO dalla colonna Status (F) sopra - F e' lo
+    # stato corrente della non conformita', H e' l'esito dopo l'azione.
+    oh_action_approved = 0
+    oh_action_not_approved = 0
+    oh_action_pending = 0
+    for r in range(5, last_oh + 1):
+        h = str(wsOH.cell(row=r, column=8).value or "").strip()
+        e = wsOH.cell(row=r, column=5).value
+        if not e:
+            continue
+        if h == "Approved":
+            oh_action_approved += 1
+        elif h == "Not Approved":
+            oh_action_not_approved += 1
+        else:
+            oh_action_pending += 1
+
     wsST = wb[SH_STRIP]
     last_st = ultima_riga(wsST, 6, 5)
     strip_count = conta_status(wsST, 6, 5, last_st)
+
+    raw_materials, raw_material_date = estrai_raw_material(wb[SH_RAWMAT])
 
     pass_ppt, fail_ppt, prog_ppt, tot_ppt = scan_lab_tests(wb[SH_LABPPT])
     pass_prod, fail_prod, prog_prod, tot_prod = scan_lab_tests(wb[SH_LABPROD])
@@ -210,11 +282,18 @@ def estrai_kpi(path):
 
     return dict(
         tot_pipes_to_finish=tot_pipes_to_finish, tot_item_qty=tot_item_qty,
+        work_days_to_finish=work_days_to_finish, production_estimation=production_estimation,
+        qcp_no=qcp_no, od_wt=od_wt,
         completed_qty=completed_qty, pct_complete=pct_complete,
         coated_vdi=coated_vdi, coated_fin=coated_fin, coated_totale=coated_totale,
-        na_vdi=na_vdi, na_fin=na_fin, app_fin=app_fin, pct_app_fin=pct_app_fin,
+        na_vdi=na_vdi, na_fin=na_fin, repair_vdi=repair_vdi, repair_fin=repair_fin,
+        app_vdi=app_vdi, app_fin=app_fin, pct_app_fin=pct_app_fin,
         on_hold_count=on_hold_count, pct_na=pct_na,
         oh_not_approved=oh_not_approved, oh_on_hold=oh_on_hold, oh_repair=oh_repair,
+        oh_summary_row2=oh_summary_row2,
+        oh_action_approved=oh_action_approved, oh_action_not_approved=oh_action_not_approved,
+        oh_action_pending=oh_action_pending,
+        raw_materials=raw_materials, raw_material_date=raw_material_date,
         strip_count=strip_count,
         pass_ppt=pass_ppt, fail_ppt=fail_ppt, prog_ppt=prog_ppt, tot_ppt=tot_ppt,
         pass_prod=pass_prod, fail_prod=fail_prod, prog_prod=prog_prod, tot_prod=tot_prod,
@@ -240,6 +319,12 @@ def fmt_en(n):
 
 def fmt_pct(v):
     return "%.1f%%" % (v * 100)
+
+
+def fmt_date(v):
+    if isinstance(v, datetime):
+        return v.strftime("%d/%m/%Y")
+    return str(v or "n/a")
 
 
 def stacked_bar(segments):
@@ -275,8 +360,10 @@ def genera_html(kpi, report_date):
     col_fail = semaforo(kpi["pct_fail"], 0.02, 0.05)
 
     bullets = []
-    bullets.append("Production: %s pipes coated (VDI+Final) out of %s total order item qty; %s pipes still to finish." % (
-        fmt_en(kpi["coated_totale"]), fmt_en(kpi["tot_item_qty"]), fmt_en(kpi["tot_pipes_to_finish"])))
+    bullets.append("Production: %s pipes coated (VDI+Final) out of %s total order item qty; %s pipes still to finish (%s work days)." % (
+        fmt_en(kpi["coated_totale"]), fmt_en(kpi["tot_item_qty"]), fmt_en(kpi["tot_pipes_to_finish"]), fmt_en(kpi["work_days_to_finish"])))
+    bullets.append("Repair: %s pipes reworked at VDI, %s at Final Inspection (%s combined)." % (
+        fmt_en(kpi["repair_vdi"]), fmt_en(kpi["repair_fin"]), fmt_en(kpi["repair_vdi"] + kpi["repair_fin"])))
     bullets.append("Anti Corrosive Plant: %s pipes not approved / quarantined (%s of total coated)." % (
         fmt_en(kpi["on_hold_count"]), fmt_pct(kpi["pct_na"])))
     bullets.append("Laboratory: %s tests performed (PPT %s / Prod %s), %s failed (%s), %s in progress." % (
@@ -287,6 +374,25 @@ def genera_html(kpi, report_date):
         bullets.append("WARNING: scrap/quarantine above reference threshold - investigate root causes.")
 
     bullets_html = "\n".join('<li>%s</li>' % b for b in bullets)
+
+    # Ruolo di ciascuno dei 5 componenti (colonne C:Q di Raw Material),
+    # confermato da Rino - il foglio stesso non li etichetta.
+    RM_ROLES = ["Epoxy Powder", "Adhesive", "Powder Adhesive", "PP Top Coat", "Rough Coat"]
+    rm_rows = []
+    for i, m in enumerate(kpi["raw_materials"]):
+        role = RM_ROLES[i] if i < len(RM_ROLES) else "Material %d" % (i + 1)
+        badge = '<span class="rm-badge">BATCH CHANGED THIS PERIOD</span>' if m["batch_changed"] else ""
+        rm_rows.append(
+            '<tr><td>%s</td><td>%s</td><td>%s</td><td>%s%s</td></tr>' % (
+                role, m["manufacturer"] or "n/a", m["trade_name"] or "n/a", m["batch"] or "n/a", badge))
+    rm_table_rows = "\n".join(rm_rows)
+    rm_date = fmt_date(kpi["raw_material_date"])
+
+    chart_action = stacked_bar([
+        ("Approved", kpi["oh_action_approved"], "#00e676"),
+        ("Not Approved", kpi["oh_action_not_approved"], "#ff4757"),
+        ("Pending Action", kpi["oh_action_pending"], "#ffca28"),
+    ])
 
     # ---- Charts (thin stacked bars, verified compositions only) ----
     # Colori come var(--blue/--teal/--purple), non esadecimale fisso: cosi'
@@ -307,6 +413,39 @@ def genera_html(kpi, report_date):
         ("On Hold", kpi["oh_on_hold"], "var(--teal)"),
         ("Repair", kpi["oh_repair"], "var(--purple)"),
     ])
+    # Riepilogo manuale del vendor (On hold!A2:H2) - card a parte, valori
+    # cosi' come compilati nel foglio, NON ricalcolati (possono differire
+    # dal conteggio del log grezzo sopra, vedi nota in fondo alla pagina).
+    oh_summary_html = "".join(
+        '<div class="stat-item"><div class="stat-label">%s</div><div class="stat-val">%s</div></div>' % (
+            label, fmt_en(value))
+        for label, value in kpi["oh_summary_row2"]
+    )
+
+    # Disposizione per stazione (Approved/Repair/Not Approved), dal foglio
+    # Production stesso - colori di STATO (fissi, non legati all'accento),
+    # diverso concetto da "Not Approved/Quarantine by Disposition" sopra
+    # (quello viene dal log del foglio On hold, un'altra fonte).
+    station_rows = []
+    for name, coated, app, rep, na in (
+            ("VDI Station", kpi["coated_vdi"], kpi["app_vdi"], kpi["repair_vdi"], kpi["na_vdi"]),
+            ("Final Station", kpi["coated_fin"], kpi["app_fin"], kpi["repair_fin"], kpi["na_fin"])):
+        segs = [("Approved", app, "#00e676"), ("Repair", rep, "#ffca28"), ("Not Approved", na, "#ff4757")]
+        total = max(coated, 1)
+        bar = "".join(
+            '<div class="seg" style="width:%.3f%%;background:%s;" title="%s: %s"></div>' % (
+                v / total * 100, color, label, fmt_en(v))
+            for label, v, color in segs if v > 0
+        )
+        station_rows.append(
+            '<div class="lab-row"><div class="lab-row-lbl">%s <span class="lab-row-n">(%s coated)</span></div>'
+            '<div class="stackbar">%s</div></div>' % (name, fmt_en(coated), bar))
+    chart_station_rows = "\n".join(station_rows)
+    chart_station_legend = '<div class="legend">' + "".join(
+        '<div class="legend-item"><span class="dot" style="background:%s;"></span>%s</div>' % (c, l)
+        for l, c in (("Approved", "#00e676"), ("Repair", "#ffca28"), ("Not Approved", "#ff4757"))
+    ) + "</div>"
+
     lab_rows = []
     for name, p, f, prog, tot in (
             ("PPT", kpi["pass_ppt"], kpi["fail_ppt"], kpi["prog_ppt"], kpi["tot_ppt"]),
@@ -341,6 +480,16 @@ body{{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);min
 header{{display:flex;justify-content:space-between;align-items:center;padding:20px 52px;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:10px;}}
 .brand-title{{font-size:18px;font-weight:700;letter-spacing:1px;background:linear-gradient(90deg,var(--blue),var(--teal));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}}
 .brand-sub{{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:3px;color:var(--muted);text-transform:uppercase;margin-top:3px;}}
+.proj-info{{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--muted);margin-top:6px;}}
+.stat-row{{display:flex;flex-wrap:wrap;gap:28px;}}
+.stat-item .stat-label{{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:6px;}}
+.stat-item .stat-val{{font-size:28px;font-weight:800;color:var(--text);}}
+.chart-note{{font-size:10px;color:var(--muted);margin-top:14px;font-style:italic;}}
+.rm-table{{width:100%;border-collapse:collapse;font-size:12px;}}
+.rm-table th{{text-align:left;font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);padding:6px 10px;border-bottom:1px solid var(--border);}}
+.rm-table td{{padding:9px 10px;border-bottom:1px solid var(--border);color:var(--text);}}
+.rm-table tr:last-child td{{border-bottom:none;}}
+.rm-badge{{display:inline-block;margin-left:8px;padding:2px 8px;border-radius:10px;background:rgba(255,202,40,.15);color:var(--amber);font-size:8px;font-family:'JetBrains Mono',monospace;letter-spacing:.5px;white-space:nowrap;}}
 .hdr-date{{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);}}
 .hdr-date b{{color:var(--text);}}
 a.back{{color:var(--blue);font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:1px;text-decoration:none;}}
@@ -393,7 +542,7 @@ ul.bullets li::before{{content:'';position:absolute;left:0;top:7px;width:6px;hei
   body{{background:#fff;color:#1a2233;padding:0;}}
   header{{border-bottom:1px solid #ccc;padding:0 0 12px;}}
   .brand-title{{background:none;-webkit-text-fill-color:#0a3d62;color:#0a3d62;}}
-  .brand-sub,.hdr-date{{color:#555;}}
+  .brand-sub,.hdr-date,.proj-info{{color:#555;}}
   .hdr-date b{{color:#1a2233;}}
   main{{padding:16px 0 0;max-width:none;}}
   .sl{{color:#0a3d62;margin:18px 0 10px;}}
@@ -401,8 +550,11 @@ ul.bullets li::before{{content:'';position:absolute;left:0;top:7px;width:6px;hei
   .kpi,.chart-card,.card{{background:#f7f9fb;border:1px solid #ddd;}}
   .kpi::after,.chart-card::after{{display:none;}}
   .kpi-val{{background:none;-webkit-text-fill-color:#0a3d62;color:#0a3d62;}}
-  .kpi-sub,.legend-item,.lab-row-n,.lg-pct{{color:#555;}}
-  .legend-item b,.lab-row-lbl{{color:#1a2233;}}
+  .kpi-sub,.legend-item,.lab-row-n,.lg-pct,.stat-item .stat-label,.chart-note{{color:#555;}}
+  .legend-item b,.lab-row-lbl,.stat-item .stat-val{{color:#1a2233;}}
+  .rm-table td{{color:#1a2233;border-bottom:1px solid #ddd;}}
+  .rm-table th{{color:#555;border-bottom:1px solid #ddd;}}
+  .rm-badge{{background:#fef3c7;color:#92400e;}}
   ul.bullets li{{color:#1a2233;}}
   .chart-grid{{grid-template-columns:1fr 1fr;}}
   .chart-card.wide{{grid-column:1 / -1;}}
@@ -475,6 +627,7 @@ body.light .stackbar{{background:rgba(0,0,0,.05);}}
   <div>
     <div class="brand-title">Sakarya Gas Field Development - 3LPP Inspection</div>
     <div class="brand-sub">Weekly Summary - Coating Plant #6 - Tenaris Confab</div>
+    <div class="proj-info">QCP No: {qcp_no} &nbsp;&middot;&nbsp; {od_wt} &nbsp;&middot;&nbsp; Est. Completion: {production_estimation}</div>
   </div>
   <div style="display:flex;align-items:center;gap:20px;">
     <a class="back no-print" href="index.html">&larr; Overall Status Dashboard</a>
@@ -486,12 +639,21 @@ body.light .stackbar{{background:rgba(0,0,0,.05);}}
 <main>
   <div class="sl">Key Performance Indicators</div>
   <div class="kpi-grid">
-    <div class="kpi"><div class="kpi-label">Pipes to Finish</div><div class="kpi-val">{tot_pipes_to_finish}</div><div class="kpi-sub">of {tot_item_qty} total item qty</div><div class="kpi-bar" style="background:linear-gradient(90deg,var(--blue),var(--teal));"></div></div>
+    <div class="kpi"><div class="kpi-label">Pipes to Finish</div><div class="kpi-val">{tot_pipes_to_finish}</div><div class="kpi-sub">of {tot_item_qty} total item qty &middot; {work_days_to_finish} work days</div><div class="kpi-bar" style="background:linear-gradient(90deg,var(--blue),var(--teal));"></div></div>
     <div class="kpi"><div class="kpi-label">Total Coated (VDI+Final)</div><div class="kpi-val">{coated_totale}</div><div class="kpi-sub">VDI: {coated_vdi} | Final: {coated_fin}</div><div class="kpi-bar" style="background:linear-gradient(90deg,var(--blue),var(--teal));"></div></div>
     <div class="kpi"><div class="kpi-label">Approved - Final Inspection</div><div class="kpi-val">{app_fin}</div><div class="kpi-sub">{pct_app_fin} of final coated</div><div class="kpi-bar" style="background:linear-gradient(90deg,var(--blue),var(--teal));"></div></div>
     <div class="kpi"><div class="kpi-label">Not Approved / Quarantine</div><div class="kpi-val" style="background:none;-webkit-text-fill-color:{col_na};color:{col_na};">{on_hold_count}</div><div class="kpi-sub">{pct_na} of total coated</div><div class="kpi-bar" style="background:{col_na};"></div></div>
     <div class="kpi"><div class="kpi-label">Lab Tests Failed (PPT+Prod)</div><div class="kpi-val" style="background:none;-webkit-text-fill-color:{col_fail};color:{col_fail};">{fail_lab_totale}</div><div class="kpi-sub">{pct_fail} of {tot_lab} tests performed</div><div class="kpi-bar" style="background:{col_fail};"></div></div>
     <div class="kpi"><div class="kpi-label">Stripping Control Open</div><div class="kpi-val">{strip_count}</div><div class="kpi-sub">non-conformances recorded</div><div class="kpi-bar" style="background:linear-gradient(90deg,var(--blue),var(--teal));"></div></div>
+  </div>
+
+  <div class="sl">3LPP Raw Material</div>
+  <div class="card">
+    <table class="rm-table">
+      <thead><tr><th></th><th>Manufacturer</th><th>Trade Name</th><th>Batch</th></tr></thead>
+      <tbody>{rm_table_rows}</tbody>
+    </table>
+    <div class="chart-note">Materials in use as of last logged shift ({rm_date}). Source: "Raw Material" sheet, columns C-Q.</div>
   </div>
 
   <div class="sl">Analysis &amp; Observations</div>
@@ -513,6 +675,19 @@ body.light .stackbar{{background:rgba(0,0,0,.05);}}
     <div class="chart-card">
       <div class="chart-title">Not Approved / Quarantine by Disposition</div>
       {chart_quarantine}
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">On Hold</div>
+      <div class="stat-row">{oh_summary_html}</div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">After Action Outcome</div>
+      {chart_action}
+    </div>
+    <div class="chart-card wide">
+      <div class="chart-title">Production Throughput by Station</div>
+      {chart_station_rows}
+      {chart_station_legend}
     </div>
     <div class="chart-card wide">
       <div class="chart-title">Lab Test Results by Type</div>
@@ -536,6 +711,9 @@ document.addEventListener("mousemove", (e) => {{
 </html>
 """.format(
         report_date=report_date,
+        qcp_no=kpi["qcp_no"] or "n/a", od_wt=kpi["od_wt"] or "n/a",
+        production_estimation=fmt_date(kpi["production_estimation"]),
+        work_days_to_finish=fmt_en(kpi["work_days_to_finish"]),
         tot_pipes_to_finish=fmt_en(kpi["tot_pipes_to_finish"]), tot_item_qty=fmt_en(kpi["tot_item_qty"]),
         coated_totale=fmt_en(kpi["coated_totale"]), coated_vdi=fmt_en(kpi["coated_vdi"]), coated_fin=fmt_en(kpi["coated_fin"]),
         app_fin=fmt_en(kpi["app_fin"]), pct_app_fin=fmt_pct(kpi["pct_app_fin"]),
@@ -545,6 +723,9 @@ document.addEventListener("mousemove", (e) => {{
         bullets_html=bullets_html,
         pct_complete=fmt_pct(kpi["pct_complete"]), chart_completion=chart_completion,
         chart_coated=chart_coated, chart_quarantine=chart_quarantine,
+        oh_summary_html=oh_summary_html, chart_action=chart_action,
+        rm_table_rows=rm_table_rows, rm_date=rm_date,
+        chart_station_rows=chart_station_rows, chart_station_legend=chart_station_legend,
         chart_lab_rows=chart_lab_rows, chart_lab_legend=chart_lab_legend,
     )
 
