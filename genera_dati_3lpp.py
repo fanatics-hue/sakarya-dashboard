@@ -28,6 +28,7 @@ Avvio: doppio clic su AVVIA_GUI_3LPP.bat (GUI) oppure
        python genera_dati_3lpp.py  (da riga di comando)
 """
 import glob
+import math
 import os
 import re
 import sys
@@ -359,6 +360,10 @@ def genera_html(kpi, report_date):
     col_na = semaforo(kpi["pct_na"], 0.03, 0.07)
     col_fail = semaforo(kpi["pct_fail"], 0.02, 0.05)
 
+    ring_r = 38
+    circumference = 2 * math.pi * ring_r
+    ring_offset = circumference * (1 - kpi["pct_complete"])
+
     bullets = []
     bullets.append("Production: %s pipes coated (VDI+Final) out of %s total order item qty; %s pipes still to finish (%s work days)." % (
         fmt_en(kpi["coated_totale"]), fmt_en(kpi["tot_item_qty"]), fmt_en(kpi["tot_pipes_to_finish"]), fmt_en(kpi["work_days_to_finish"])))
@@ -508,6 +513,18 @@ main{{padding:32px 52px;max-width:1200px;margin:0 auto;}}
 .kpi-val{{font-size:32px;font-weight:800;line-height:1.15;margin-bottom:6px;white-space:nowrap;background:linear-gradient(135deg,var(--blue),var(--teal));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}}
 .kpi-sub{{font-size:11px;color:var(--muted);}}
 .kpi-bar{{position:absolute;bottom:0;left:0;right:0;height:3px;opacity:.85;transition:opacity .2s;}}
+.kpi-hero{{display:flex;align-items:center;gap:26px;margin-bottom:14px;padding:20px 28px;}}
+.ring-wrap{{position:relative;width:90px;height:90px;flex-shrink:0;}}
+.progress-ring{{transform:rotate(-90deg);}}
+.ring-bg{{fill:none;stroke:var(--border);stroke-width:7;}}
+.ring-fill{{fill:none;stroke:url(#ringGrad);stroke-width:7;stroke-linecap:round;stroke-dasharray:{circumference}px;}}
+.ring-pct{{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;color:var(--text);}}
+.kpi-hero-text{{min-width:0;}}
+.kpi-hero-date{{font-size:26px;font-weight:800;color:var(--text);margin:4px 0 6px;white-space:nowrap;}}
+@media (prefers-reduced-motion: no-preference) {{
+  .ring-fill{{animation:ringFill 1.4s cubic-bezier(.4,0,.2,1) forwards;}}
+}}
+@keyframes ringFill{{from{{stroke-dashoffset:{circumference}px;}}to{{stroke-dashoffset:{ring_offset}px;}}}}
 .card{{background:var(--s1);border:1px solid var(--border);border-radius:var(--r);padding:24px;margin-bottom:14px;}}
 ul.bullets{{list-style:none;display:flex;flex-direction:column;gap:10px;}}
 ul.bullets li{{font-size:13px;line-height:1.5;padding-left:16px;position:relative;color:var(--text);}}
@@ -550,6 +567,9 @@ ul.bullets li::before{{content:'';position:absolute;left:0;top:7px;width:6px;hei
   .kpi,.chart-card,.card{{background:#f7f9fb;border:1px solid #ddd;}}
   .kpi::after,.chart-card::after{{display:none;}}
   .kpi-val{{background:none;-webkit-text-fill-color:#0a3d62;color:#0a3d62;}}
+  .kpi-hero-date{{color:#0a3d62;}}
+  .ring-pct{{color:#1a2233;}}
+  .ring-bg{{stroke:#ddd;}}
   .kpi-sub,.legend-item,.lab-row-n,.lg-pct,.stat-item .stat-label,.chart-note{{color:#555;}}
   .legend-item b,.lab-row-lbl,.stat-item .stat-val{{color:#1a2233;}}
   .rm-table td{{color:#1a2233;border-bottom:1px solid #ddd;}}
@@ -627,7 +647,7 @@ body.light .stackbar{{background:rgba(0,0,0,.05);}}
   <div>
     <div class="brand-title">Sakarya Gas Field Development - 3LPP Inspection</div>
     <div class="brand-sub">Weekly Summary - Coating Plant #6 - Tenaris Confab</div>
-    <div class="proj-info">QCP No: {qcp_no} &nbsp;&middot;&nbsp; {od_wt} &nbsp;&middot;&nbsp; Est. Completion: {production_estimation}</div>
+    <div class="proj-info">QCP No: {qcp_no} &nbsp;&middot;&nbsp; {od_wt}</div>
   </div>
   <div style="display:flex;align-items:center;gap:20px;">
     <a class="back no-print" href="index.html">&larr; Overall Status Dashboard</a>
@@ -638,6 +658,23 @@ body.light .stackbar{{background:rgba(0,0,0,.05);}}
 
 <main>
   <div class="sl">Key Performance Indicators</div>
+  <div class="kpi kpi-hero">
+    <div class="ring-wrap">
+      <svg class="progress-ring" viewBox="0 0 90 90" width="90" height="90">
+        <defs><linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="var(--blue)"/><stop offset="100%" stop-color="var(--teal)"/>
+        </linearGradient></defs>
+        <circle class="ring-bg" cx="45" cy="45" r="38"></circle>
+        <circle class="ring-fill" cx="45" cy="45" r="38" style="stroke-dashoffset:{ring_offset}px;"></circle>
+      </svg>
+      <div class="ring-pct">{pct_complete}</div>
+    </div>
+    <div class="kpi-hero-text">
+      <div class="kpi-label">Est. Completion</div>
+      <div class="kpi-hero-date">{production_estimation}</div>
+      <div class="kpi-sub">{work_days_to_finish} work days remaining &middot; {pct_complete} of order complete</div>
+    </div>
+  </div>
   <div class="kpi-grid">
     <div class="kpi"><div class="kpi-label">Pipes to Finish</div><div class="kpi-val">{tot_pipes_to_finish}</div><div class="kpi-sub">of {tot_item_qty} total item qty &middot; {work_days_to_finish} work days</div><div class="kpi-bar" style="background:linear-gradient(90deg,var(--blue),var(--teal));"></div></div>
     <div class="kpi"><div class="kpi-label">Total Coated (VDI+Final)</div><div class="kpi-val">{coated_totale}</div><div class="kpi-sub">VDI: {coated_vdi} | Final: {coated_fin}</div><div class="kpi-bar" style="background:linear-gradient(90deg,var(--blue),var(--teal));"></div></div>
@@ -722,6 +759,7 @@ document.addEventListener("mousemove", (e) => {{
         strip_count=fmt_en(kpi["strip_count"]),
         bullets_html=bullets_html,
         pct_complete=fmt_pct(kpi["pct_complete"]), chart_completion=chart_completion,
+        circumference="%.2f" % circumference, ring_offset="%.2f" % ring_offset,
         chart_coated=chart_coated, chart_quarantine=chart_quarantine,
         oh_summary_html=oh_summary_html, chart_action=chart_action,
         rm_table_rows=rm_table_rows, rm_date=rm_date,
