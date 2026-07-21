@@ -22,6 +22,8 @@ header{display:flex;justify-content:space-between;align-items:center;padding:20p
 .rm-table td{padding:9px 10px;border-bottom:1px solid var(--border);color:var(--text);}
 .rm-table tr:last-child td{border-bottom:none;}
 .rm-badge{display:inline-block;margin-left:8px;padding:2px 8px;border-radius:10px;background:rgba(255,202,40,.15);color:var(--amber);font-size:8px;font-family:'JetBrains Mono',monospace;letter-spacing:.5px;white-space:nowrap;}
+.seg{cursor:default;}
+.cv-tooltip{position:fixed;display:none;pointer-events:none;z-index:1000;background:var(--s1);border:1px solid rgba(0,168,255,0.2);border-radius:6px;padding:6px 11px;font-size:11px;font-weight:600;color:var(--text);box-shadow:0 4px 16px rgba(0,0,0,.4);white-space:nowrap;}
 .hdr-date{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);}
 .hdr-date b{color:var(--text);}
 a.back{color:var(--blue);font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:1px;text-decoration:none;}
@@ -46,8 +48,11 @@ main{padding:32px 52px;max-width:1200px;margin:0 auto;}
 .ring-bg{fill:none;stroke:var(--border);stroke-width:7;}
 .ring-fill{fill:none;stroke:url(#ringGrad);stroke-width:7;stroke-linecap:round;stroke-dasharray:238.76px;}
 .ring-pct{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;color:var(--text);}
-.kpi-hero-text{min-width:0;}
+.kpi-hero-text{min-width:0;flex-shrink:0;}
 .kpi-hero-date{font-size:26px;font-weight:800;color:var(--text);margin:4px 0 6px;white-space:nowrap;}
+.kpi-hero-bar{flex:1;min-width:200px;padding-left:26px;border-left:1px solid var(--border);}
+.kpi-hero-bar .stackbar{height:12px;border-radius:6px;}
+@media (max-width:760px){.kpi-hero{flex-wrap:wrap;}.kpi-hero-bar{border-left:none;padding-left:0;border-top:1px solid var(--border);padding-top:16px;flex-basis:100%;}}
 @media (prefers-reduced-motion: no-preference) {
   .ring-fill{animation:ringFill 1.4s cubic-bezier(.4,0,.2,1) forwards;}
 }
@@ -72,11 +77,6 @@ ul.bullets li::before{content:'';position:absolute;left:0;top:7px;width:6px;heig
 .lab-row:last-child{margin-bottom:0;}
 .lab-row-lbl{font-size:12px;color:var(--text);margin-bottom:7px;}
 .lab-row-n{color:var(--muted);font-family:'JetBrains Mono',monospace;font-size:10px;}
-.completion-row{display:flex;align-items:center;gap:28px;}
-.completion-pct{font-size:44px;font-weight:800;line-height:1;flex-shrink:0;background:linear-gradient(135deg,var(--blue),var(--teal));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
-.completion-bar-wrap{flex:1;}
-.completion-bar-wrap .stackbar{height:14px;border-radius:7px;}
-@media (max-width:640px){.completion-row{flex-direction:column;align-items:flex-start;gap:16px;}}
 .print-btn{display:flex;align-items:center;gap:8px;padding:7px 18px;background:linear-gradient(90deg,var(--blue),var(--teal));border:none;border-radius:6px;font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:#060d1a;cursor:pointer;transition:opacity .2s;}
 .print-btn:hover{opacity:.85;}
 footer{border-top:1px solid var(--border);background:rgba(6,13,26,.95);padding:28px 52px;margin-top:40px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:24px;}
@@ -94,7 +94,7 @@ footer{border-top:1px solid var(--border);background:rgba(6,13,26,.95);padding:2
 @media print{
   *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;box-shadow:none!important;}
   @page{size:A4;margin:14mm;}
-  .no-print{display:none!important;}
+  .no-print,.cv-tooltip{display:none!important;}
   body{background:#fff;color:#1a2233;padding:0;}
   header{border-bottom:1px solid #ccc;padding:0 0 12px;}
   .brand-title{background:none;-webkit-text-fill-color:#0a3d62;color:#0a3d62;}
@@ -122,7 +122,6 @@ footer{border-top:1px solid var(--border);background:rgba(6,13,26,.95);padding:2
   ul.bullets li{color:#1a2233;}
   .chart-grid{grid-template-columns:1fr 1fr;}
   .chart-card.wide{grid-column:1 / -1;}
-  .completion-pct{background:none;-webkit-text-fill-color:#0a3d62;color:#0a3d62;}
   .kpi,.chart-card,.card{page-break-inside:avoid;}
 }
 /* Tema chiaro: applicato in automatico se scelto nel dashboard principale
@@ -130,7 +129,7 @@ footer{border-top:1px solid var(--border);background:rgba(6,13,26,.95);padding:2
    pulsante THEME qui, la pagina eredita e basta. */
 body.light{--border:rgba(0,100,200,0.15);--text:#0f172a;--muted:#64748b;}
 body.light header{background:rgba(240,244,248,0.9);}
-body.light .brand-title,body.light .completion-pct{background:none;-webkit-text-fill-color:#0050a0;color:#0050a0;}
+body.light .brand-title{background:none;-webkit-text-fill-color:#0050a0;color:#0050a0;}
 body.light .kpi-val{background:none;-webkit-text-fill-color:unset;color:#0050a0;}
 body.light .stackbar{background:rgba(0,0,0,.05);}
 </style>
@@ -216,8 +215,9 @@ body.light .stackbar{background:rgba(0,0,0,.05);}
     <div class="kpi-hero-text">
       <div class="kpi-label">Est. Completion</div>
       <div class="kpi-hero-date">18/06/2027</div>
-      <div class="kpi-sub">335 work days remaining &middot; 10.0% of order complete</div>
+      <div class="kpi-sub">335 work days remaining</div>
     </div>
+    <div class="kpi-hero-bar"><div class="stackbar"><div class="seg" style="width:9.956%;background:var(--teal);border-radius:4px 0 0 4px;" data-tip="Completed: 1,593 (10.0%)"></div><div class="seg" style="width:90.044%;background:var(--blue);border-radius:0 4px 4px 0;" data-tip="Remaining: 14,407 (90.0%)"></div></div><div class="legend"><div class="legend-item"><span class="dot" style="background:var(--teal);"></span>Completed <b>1,593</b><span class="lg-pct">10.0%</span></div><div class="legend-item"><span class="dot" style="background:var(--blue);"></span>Remaining <b>14,407</b><span class="lg-pct">90.0%</span></div></div></div>
   </div>
   <div class="kpi-grid">
     <div class="kpi"><div class="kpi-label">Pipes to Finish</div><div class="kpi-val">14,407</div><div class="kpi-sub">of 16,000 total item qty &middot; 335 work days</div><div class="kpi-bar" style="background:linear-gradient(90deg,var(--blue),var(--teal));"></div></div>
@@ -250,20 +250,13 @@ body.light .stackbar{background:rgba(0,0,0,.05);}
 
   <div class="sl">Charts</div>
   <div class="chart-grid">
-    <div class="chart-card wide">
-      <div class="chart-title">Order Completion</div>
-      <div class="completion-row">
-        <div class="completion-pct">10.0%</div>
-        <div class="completion-bar-wrap"><div class="stackbar"><div class="seg" style="width:9.956%;background:var(--teal);border-radius:4px 0 0 4px;" title="Completed: 1,593 (10.0%)"></div><div class="seg" style="width:90.044%;background:var(--blue);border-radius:0 4px 4px 0;" title="Remaining: 14,407 (90.0%)"></div></div><div class="legend"><div class="legend-item"><span class="dot" style="background:var(--teal);"></span>Completed <b>1,593</b><span class="lg-pct">10.0%</span></div><div class="legend-item"><span class="dot" style="background:var(--blue);"></span>Remaining <b>14,407</b><span class="lg-pct">90.0%</span></div></div></div>
-      </div>
-    </div>
     <div class="chart-card">
       <div class="chart-title">Total Coated by Station</div>
-      <div class="stackbar"><div class="seg" style="width:55.029%;background:var(--blue);border-radius:4px 0 0 4px;" title="VDI Station: 1,636 (55.0%)"></div><div class="seg" style="width:44.971%;background:var(--teal);border-radius:0 4px 4px 0;" title="Final Station: 1,337 (45.0%)"></div></div><div class="legend"><div class="legend-item"><span class="dot" style="background:var(--blue);"></span>VDI Station <b>1,636</b><span class="lg-pct">55.0%</span></div><div class="legend-item"><span class="dot" style="background:var(--teal);"></span>Final Station <b>1,337</b><span class="lg-pct">45.0%</span></div></div>
+      <div class="stackbar"><div class="seg" style="width:55.029%;background:var(--blue);border-radius:4px 0 0 4px;" data-tip="VDI Station: 1,636 (55.0%)"></div><div class="seg" style="width:44.971%;background:var(--teal);border-radius:0 4px 4px 0;" data-tip="Final Station: 1,337 (45.0%)"></div></div><div class="legend"><div class="legend-item"><span class="dot" style="background:var(--blue);"></span>VDI Station <b>1,636</b><span class="lg-pct">55.0%</span></div><div class="legend-item"><span class="dot" style="background:var(--teal);"></span>Final Station <b>1,337</b><span class="lg-pct">45.0%</span></div></div>
     </div>
     <div class="chart-card">
       <div class="chart-title">Not Approved / Quarantine by Disposition</div>
-      <div class="stackbar"><div class="seg" style="width:41.573%;background:var(--blue);border-radius:4px 0 0 4px;" title="Not Approved: 37 (41.6%)"></div><div class="seg" style="width:33.708%;background:var(--teal);" title="On Hold: 30 (33.7%)"></div><div class="seg" style="width:24.719%;background:var(--purple);border-radius:0 4px 4px 0;" title="Repair: 22 (24.7%)"></div></div><div class="legend"><div class="legend-item"><span class="dot" style="background:var(--blue);"></span>Not Approved <b>37</b><span class="lg-pct">41.6%</span></div><div class="legend-item"><span class="dot" style="background:var(--teal);"></span>On Hold <b>30</b><span class="lg-pct">33.7%</span></div><div class="legend-item"><span class="dot" style="background:var(--purple);"></span>Repair <b>22</b><span class="lg-pct">24.7%</span></div></div>
+      <div class="stackbar"><div class="seg" style="width:41.573%;background:var(--blue);border-radius:4px 0 0 4px;" data-tip="Not Approved: 37 (41.6%)"></div><div class="seg" style="width:33.708%;background:var(--teal);" data-tip="On Hold: 30 (33.7%)"></div><div class="seg" style="width:24.719%;background:var(--purple);border-radius:0 4px 4px 0;" data-tip="Repair: 22 (24.7%)"></div></div><div class="legend"><div class="legend-item"><span class="dot" style="background:var(--blue);"></span>Not Approved <b>37</b><span class="lg-pct">41.6%</span></div><div class="legend-item"><span class="dot" style="background:var(--teal);"></span>On Hold <b>30</b><span class="lg-pct">33.7%</span></div><div class="legend-item"><span class="dot" style="background:var(--purple);"></span>Repair <b>22</b><span class="lg-pct">24.7%</span></div></div>
     </div>
     <div class="chart-card">
       <div class="chart-title">On Hold</div>
@@ -271,18 +264,18 @@ body.light .stackbar{background:rgba(0,0,0,.05);}
     </div>
     <div class="chart-card">
       <div class="chart-title">After Action Outcome</div>
-      <div class="stackbar"><div class="seg" style="width:17.978%;background:#00e676;border-radius:4px 0 0 4px;" title="Approved: 16 (18.0%)"></div><div class="seg" style="width:43.820%;background:#ff4757;" title="Not Approved: 39 (43.8%)"></div><div class="seg" style="width:38.202%;background:#ffca28;border-radius:0 4px 4px 0;" title="Pending Action: 34 (38.2%)"></div></div><div class="legend"><div class="legend-item"><span class="dot" style="background:#00e676;"></span>Approved <b>16</b><span class="lg-pct">18.0%</span></div><div class="legend-item"><span class="dot" style="background:#ff4757;"></span>Not Approved <b>39</b><span class="lg-pct">43.8%</span></div><div class="legend-item"><span class="dot" style="background:#ffca28;"></span>Pending Action <b>34</b><span class="lg-pct">38.2%</span></div></div>
+      <div class="stackbar"><div class="seg" style="width:17.978%;background:#00e676;border-radius:4px 0 0 4px;" data-tip="Approved: 16 (18.0%)"></div><div class="seg" style="width:43.820%;background:#ff4757;" data-tip="Not Approved: 39 (43.8%)"></div><div class="seg" style="width:38.202%;background:#ffca28;border-radius:0 4px 4px 0;" data-tip="Pending Action: 34 (38.2%)"></div></div><div class="legend"><div class="legend-item"><span class="dot" style="background:#00e676;"></span>Approved <b>16</b><span class="lg-pct">18.0%</span></div><div class="legend-item"><span class="dot" style="background:#ff4757;"></span>Not Approved <b>39</b><span class="lg-pct">43.8%</span></div><div class="legend-item"><span class="dot" style="background:#ffca28;"></span>Pending Action <b>34</b><span class="lg-pct">38.2%</span></div></div>
     </div>
     <div class="chart-card wide">
       <div class="chart-title">Production Throughput by Station</div>
-      <div class="lab-row"><div class="lab-row-lbl">VDI Station <span class="lab-row-n">(1,636 coated)</span></div><div class="stackbar"><div class="seg" style="width:97.372%;background:#00e676;" title="Approved: 1,593"></div><div class="seg" style="width:0.183%;background:#ffca28;" title="Repair: 3"></div><div class="seg" style="width:2.445%;background:#ff4757;" title="Not Approved: 40"></div></div></div>
-<div class="lab-row"><div class="lab-row-lbl">Final Station <span class="lab-row-n">(1,337 coated)</span></div><div class="stackbar"><div class="seg" style="width:97.607%;background:#00e676;" title="Approved: 1,305"></div><div class="seg" style="width:0.598%;background:#ffca28;" title="Repair: 8"></div><div class="seg" style="width:1.795%;background:#ff4757;" title="Not Approved: 24"></div></div></div>
+      <div class="lab-row"><div class="lab-row-lbl">VDI Station <span class="lab-row-n">(1,636 coated)</span></div><div class="stackbar"><div class="seg" style="width:97.372%;background:#00e676;" data-tip="Approved: 1,593"></div><div class="seg" style="width:0.183%;background:#ffca28;" data-tip="Repair: 3"></div><div class="seg" style="width:2.445%;background:#ff4757;" data-tip="Not Approved: 40"></div></div></div>
+<div class="lab-row"><div class="lab-row-lbl">Final Station <span class="lab-row-n">(1,337 coated)</span></div><div class="stackbar"><div class="seg" style="width:97.607%;background:#00e676;" data-tip="Approved: 1,305"></div><div class="seg" style="width:0.598%;background:#ffca28;" data-tip="Repair: 8"></div><div class="seg" style="width:1.795%;background:#ff4757;" data-tip="Not Approved: 24"></div></div></div>
       <div class="legend"><div class="legend-item"><span class="dot" style="background:#00e676;"></span>Approved</div><div class="legend-item"><span class="dot" style="background:#ffca28;"></span>Repair</div><div class="legend-item"><span class="dot" style="background:#ff4757;"></span>Not Approved</div></div>
     </div>
     <div class="chart-card wide">
       <div class="chart-title">Lab Test Results by Type</div>
-      <div class="lab-row"><div class="lab-row-lbl">PPT <span class="lab-row-n">(9 tests)</span></div><div class="stackbar"><div class="seg" style="width:100.000%;background:#00e676;" title="Pass: 9"></div></div></div>
-<div class="lab-row"><div class="lab-row-lbl">Prod <span class="lab-row-n">(89 tests)</span></div><div class="stackbar"><div class="seg" style="width:95.506%;background:#00e676;" title="Pass: 85"></div><div class="seg" style="width:3.371%;background:#ff4757;" title="Fail: 3"></div><div class="seg" style="width:1.124%;background:#ffca28;" title="In Progress: 1"></div></div></div>
+      <div class="lab-row"><div class="lab-row-lbl">PPT <span class="lab-row-n">(9 tests)</span></div><div class="stackbar"><div class="seg" style="width:100.000%;background:#00e676;" data-tip="Pass: 9"></div></div></div>
+<div class="lab-row"><div class="lab-row-lbl">Prod <span class="lab-row-n">(89 tests)</span></div><div class="stackbar"><div class="seg" style="width:95.506%;background:#00e676;" data-tip="Pass: 85"></div><div class="seg" style="width:3.371%;background:#ff4757;" data-tip="Fail: 3"></div><div class="seg" style="width:1.124%;background:#ffca28;" data-tip="In Progress: 1"></div></div></div>
       <div class="legend"><div class="legend-item"><span class="dot" style="background:#00e676;"></span>Pass</div><div class="legend-item"><span class="dot" style="background:#ff4757;"></span>Fail</div><div class="legend-item"><span class="dot" style="background:#ffca28;"></span>In Progress</div></div>
     </div>
   </div>
@@ -310,6 +303,31 @@ document.addEventListener("mousemove", (e) => {
   el.style.setProperty("--mx", (e.clientX - r.left) + "px");
   el.style.setProperty("--my", (e.clientY - r.top) + "px");
 }, { passive: true });
+
+// Tooltip personalizzato per i segmenti dei grafici (stesso stile del
+// tooltip Chart.js del dashboard principale) - sostituisce il tooltip
+// nativo del browser (title="") che aveva un aspetto diverso/di sistema.
+(function(){
+  var tip = document.createElement("div");
+  tip.className = "cv-tooltip";
+  document.body.appendChild(tip);
+  document.addEventListener("mousemove", function(e) {
+    var seg = e.target.closest(".seg[data-tip]");
+    if (!seg) { tip.style.display = "none"; return; }
+    tip.textContent = seg.getAttribute("data-tip");
+    tip.style.display = "block";
+    var vw = window.innerWidth, vh = window.innerHeight;
+    var w = tip.offsetWidth, h = tip.offsetHeight;
+    var x = e.clientX + 14, y = e.clientY + 14;
+    if (x + w > vw) x = e.clientX - w - 14;
+    if (y + h > vh) y = e.clientY - h - 14;
+    tip.style.left = x + "px";
+    tip.style.top = y + "px";
+  }, { passive: true });
+  document.addEventListener("mouseout", function(e) {
+    if (!e.relatedTarget || !e.relatedTarget.closest(".seg[data-tip]")) tip.style.display = "none";
+  }, { passive: true });
+})();
 </script>
 </body>
 </html>

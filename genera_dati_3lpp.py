@@ -350,7 +350,7 @@ def stacked_bar(segments):
             radius = "border-radius:0 4px 4px 0;"
         bar_parts.append(
             '<div class="seg" style="width:%.3f%%;background:%s;%s" '
-            'title="%s: %s (%.1f%%)"></div>' % (pct, color, radius, label, fmt_en(value), pct))
+            'data-tip="%s: %s (%.1f%%)"></div>' % (pct, color, radius, label, fmt_en(value), pct))
         legend_parts.append(
             '<div class="legend-item"><span class="dot" style="background:%s;"></span>'
             '%s <b>%s</b><span class="lg-pct">%.1f%%</span></div>' % (color, label, fmt_en(value), pct))
@@ -441,7 +441,7 @@ def genera_html(kpi, report_date):
         segs = [("Approved", app, "#00e676"), ("Repair", rep, "#ffca28"), ("Not Approved", na, "#ff4757")]
         total = max(coated, 1)
         bar = "".join(
-            '<div class="seg" style="width:%.3f%%;background:%s;" title="%s: %s"></div>' % (
+            '<div class="seg" style="width:%.3f%%;background:%s;" data-tip="%s: %s"></div>' % (
                 v / total * 100, color, label, fmt_en(v))
             for label, v, color in segs if v > 0
         )
@@ -461,7 +461,7 @@ def genera_html(kpi, report_date):
         segs = [("Pass", p, "#00e676"), ("Fail", f, "#ff4757"), ("In Progress", prog, "#ffca28")]
         total = max(tot, 1)
         bar = "".join(
-            '<div class="seg" style="width:%.3f%%;background:%s;" title="%s: %s"></div>' % (
+            '<div class="seg" style="width:%.3f%%;background:%s;" data-tip="%s: %s"></div>' % (
                 v / total * 100, color, label, fmt_en(v))
             for label, v, color in segs if v > 0
         )
@@ -498,6 +498,8 @@ header{{display:flex;justify-content:space-between;align-items:center;padding:20
 .rm-table td{{padding:9px 10px;border-bottom:1px solid var(--border);color:var(--text);}}
 .rm-table tr:last-child td{{border-bottom:none;}}
 .rm-badge{{display:inline-block;margin-left:8px;padding:2px 8px;border-radius:10px;background:rgba(255,202,40,.15);color:var(--amber);font-size:8px;font-family:'JetBrains Mono',monospace;letter-spacing:.5px;white-space:nowrap;}}
+.seg{{cursor:default;}}
+.cv-tooltip{{position:fixed;display:none;pointer-events:none;z-index:1000;background:var(--s1);border:1px solid rgba(0,168,255,0.2);border-radius:6px;padding:6px 11px;font-size:11px;font-weight:600;color:var(--text);box-shadow:0 4px 16px rgba(0,0,0,.4);white-space:nowrap;}}
 .hdr-date{{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);}}
 .hdr-date b{{color:var(--text);}}
 a.back{{color:var(--blue);font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:1px;text-decoration:none;}}
@@ -522,8 +524,11 @@ main{{padding:32px 52px;max-width:1200px;margin:0 auto;}}
 .ring-bg{{fill:none;stroke:var(--border);stroke-width:7;}}
 .ring-fill{{fill:none;stroke:url(#ringGrad);stroke-width:7;stroke-linecap:round;stroke-dasharray:{circumference}px;}}
 .ring-pct{{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;color:var(--text);}}
-.kpi-hero-text{{min-width:0;}}
+.kpi-hero-text{{min-width:0;flex-shrink:0;}}
 .kpi-hero-date{{font-size:26px;font-weight:800;color:var(--text);margin:4px 0 6px;white-space:nowrap;}}
+.kpi-hero-bar{{flex:1;min-width:200px;padding-left:26px;border-left:1px solid var(--border);}}
+.kpi-hero-bar .stackbar{{height:12px;border-radius:6px;}}
+@media (max-width:760px){{.kpi-hero{{flex-wrap:wrap;}}.kpi-hero-bar{{border-left:none;padding-left:0;border-top:1px solid var(--border);padding-top:16px;flex-basis:100%;}}}}
 @media (prefers-reduced-motion: no-preference) {{
   .ring-fill{{animation:ringFill 1.4s cubic-bezier(.4,0,.2,1) forwards;}}
 }}
@@ -548,11 +553,6 @@ ul.bullets li::before{{content:'';position:absolute;left:0;top:7px;width:6px;hei
 .lab-row:last-child{{margin-bottom:0;}}
 .lab-row-lbl{{font-size:12px;color:var(--text);margin-bottom:7px;}}
 .lab-row-n{{color:var(--muted);font-family:'JetBrains Mono',monospace;font-size:10px;}}
-.completion-row{{display:flex;align-items:center;gap:28px;}}
-.completion-pct{{font-size:44px;font-weight:800;line-height:1;flex-shrink:0;background:linear-gradient(135deg,var(--blue),var(--teal));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}}
-.completion-bar-wrap{{flex:1;}}
-.completion-bar-wrap .stackbar{{height:14px;border-radius:7px;}}
-@media (max-width:640px){{.completion-row{{flex-direction:column;align-items:flex-start;gap:16px;}}}}
 .print-btn{{display:flex;align-items:center;gap:8px;padding:7px 18px;background:linear-gradient(90deg,var(--blue),var(--teal));border:none;border-radius:6px;font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:#060d1a;cursor:pointer;transition:opacity .2s;}}
 .print-btn:hover{{opacity:.85;}}
 footer{{border-top:1px solid var(--border);background:rgba(6,13,26,.95);padding:28px 52px;margin-top:40px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:24px;}}
@@ -570,7 +570,7 @@ footer{{border-top:1px solid var(--border);background:rgba(6,13,26,.95);padding:
 @media print{{
   *{{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;box-shadow:none!important;}}
   @page{{size:A4;margin:14mm;}}
-  .no-print{{display:none!important;}}
+  .no-print,.cv-tooltip{{display:none!important;}}
   body{{background:#fff;color:#1a2233;padding:0;}}
   header{{border-bottom:1px solid #ccc;padding:0 0 12px;}}
   .brand-title{{background:none;-webkit-text-fill-color:#0a3d62;color:#0a3d62;}}
@@ -598,7 +598,6 @@ footer{{border-top:1px solid var(--border);background:rgba(6,13,26,.95);padding:
   ul.bullets li{{color:#1a2233;}}
   .chart-grid{{grid-template-columns:1fr 1fr;}}
   .chart-card.wide{{grid-column:1 / -1;}}
-  .completion-pct{{background:none;-webkit-text-fill-color:#0a3d62;color:#0a3d62;}}
   .kpi,.chart-card,.card{{page-break-inside:avoid;}}
 }}
 /* Tema chiaro: applicato in automatico se scelto nel dashboard principale
@@ -606,7 +605,7 @@ footer{{border-top:1px solid var(--border);background:rgba(6,13,26,.95);padding:
    pulsante THEME qui, la pagina eredita e basta. */
 body.light{{--border:rgba(0,100,200,0.15);--text:#0f172a;--muted:#64748b;}}
 body.light header{{background:rgba(240,244,248,0.9);}}
-body.light .brand-title,body.light .completion-pct{{background:none;-webkit-text-fill-color:#0050a0;color:#0050a0;}}
+body.light .brand-title{{background:none;-webkit-text-fill-color:#0050a0;color:#0050a0;}}
 body.light .kpi-val{{background:none;-webkit-text-fill-color:unset;color:#0050a0;}}
 body.light .stackbar{{background:rgba(0,0,0,.05);}}
 </style>
@@ -692,8 +691,9 @@ body.light .stackbar{{background:rgba(0,0,0,.05);}}
     <div class="kpi-hero-text">
       <div class="kpi-label">Est. Completion</div>
       <div class="kpi-hero-date">{production_estimation}</div>
-      <div class="kpi-sub">{work_days_to_finish} work days remaining &middot; {pct_complete} of order complete</div>
+      <div class="kpi-sub">{work_days_to_finish} work days remaining</div>
     </div>
+    <div class="kpi-hero-bar">{chart_completion}</div>
   </div>
   <div class="kpi-grid">
     <div class="kpi"><div class="kpi-label">Pipes to Finish</div><div class="kpi-val">{tot_pipes_to_finish}</div><div class="kpi-sub">of {tot_item_qty} total item qty &middot; {work_days_to_finish} work days</div><div class="kpi-bar" style="background:linear-gradient(90deg,var(--blue),var(--teal));"></div></div>
@@ -718,13 +718,6 @@ body.light .stackbar{{background:rgba(0,0,0,.05);}}
 
   <div class="sl">Charts</div>
   <div class="chart-grid">
-    <div class="chart-card wide">
-      <div class="chart-title">Order Completion</div>
-      <div class="completion-row">
-        <div class="completion-pct">{pct_complete}</div>
-        <div class="completion-bar-wrap">{chart_completion}</div>
-      </div>
-    </div>
     <div class="chart-card">
       <div class="chart-title">Total Coated by Station</div>
       {chart_coated}
@@ -776,6 +769,31 @@ document.addEventListener("mousemove", (e) => {{
   el.style.setProperty("--mx", (e.clientX - r.left) + "px");
   el.style.setProperty("--my", (e.clientY - r.top) + "px");
 }}, {{ passive: true }});
+
+// Tooltip personalizzato per i segmenti dei grafici (stesso stile del
+// tooltip Chart.js del dashboard principale) - sostituisce il tooltip
+// nativo del browser (title="") che aveva un aspetto diverso/di sistema.
+(function(){{
+  var tip = document.createElement("div");
+  tip.className = "cv-tooltip";
+  document.body.appendChild(tip);
+  document.addEventListener("mousemove", function(e) {{
+    var seg = e.target.closest(".seg[data-tip]");
+    if (!seg) {{ tip.style.display = "none"; return; }}
+    tip.textContent = seg.getAttribute("data-tip");
+    tip.style.display = "block";
+    var vw = window.innerWidth, vh = window.innerHeight;
+    var w = tip.offsetWidth, h = tip.offsetHeight;
+    var x = e.clientX + 14, y = e.clientY + 14;
+    if (x + w > vw) x = e.clientX - w - 14;
+    if (y + h > vh) y = e.clientY - h - 14;
+    tip.style.left = x + "px";
+    tip.style.top = y + "px";
+  }}, {{ passive: true }});
+  document.addEventListener("mouseout", function(e) {{
+    if (!e.relatedTarget || !e.relatedTarget.closest(".seg[data-tip]")) tip.style.display = "none";
+  }}, {{ passive: true }});
+}})();
 </script>
 </body>
 </html>
