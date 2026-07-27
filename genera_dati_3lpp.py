@@ -35,6 +35,7 @@ import sys
 from datetime import datetime
 
 import openpyxl
+from openpyxl.utils.cell import range_boundaries
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 PATTERN = "3LPP Sakarya Inspection Overall Status as of *.xlsm"
@@ -50,6 +51,21 @@ SH_STRIP = "Stripping- heating & Steel Dam."
 SH_RAWMAT = "Raw Material"
 
 FOGLI_RICHIESTI = [SH_PROD, SH_LABPPT, SH_LABPROD, SH_ONHOLD, SH_STRIP, SH_RAWMAT]
+
+# ----------------------------------------------------------------------
+#  Valori di riserva (fallback) per il blocco "dichiarazione fornitore"
+#  del foglio Production (riga Coating/Type, Total item Qty, QCP No,
+#  OD/WT). Questi dati NON sono in nessuna tabella/colonna regolare: sono
+#  scritti a mano dal fornitore in poche celle in cima al foglio. Se quel
+#  blocco viene cancellato o spostato per errore (e' gia' successo nel file
+#  "as of 07.25.2026": vedi log all'avvio), lo script usa questi valori
+#  cosi' la dashboard non mostra piu' zeri/testo segnaposto invece di un
+#  numero. AGGIORNARE QUI se il fornitore comunica un nuovo QCP/OD-WT o se
+#  cambia la quantita' totale dell'ordine 3LPP.
+FALLBACK_TIPO_3LPP = "3LPP"
+FALLBACK_TOTAL_ITEM_QTY = 16000
+FALLBACK_QCP_NO = "50217 - 3LPP – PPT Pro"
+FALLBACK_OD_WT = "OD: 609.6 mm x WT: 32.20 mm"
 
 
 def log(msg):
@@ -114,6 +130,83 @@ def ultima_riga(ws, col, riga_ini):
         if ws.cell(row=r, column=col).value not in (None, ""):
             last = r
     return last
+
+
+def _norm_label(s):
+    """Normalizza un testo per il confronto (spazi multipli, maiuscole,
+    spazi iniziali/finali): serve perche' le etichette nel foglio hanno
+    variazioni tipo doppio spazio ("Total  item Qty")."""
+    return re.sub(r"\s+", " ", str(s or "").strip().lower())
+
+
+def trova_etichetta_valore(ws, etichetta, max_row=30, max_col=30, offset_cols=(1, 2, 3, 4)):
+    """Cerca 'etichetta' come testo in una cella (nelle prime max_row righe
+    e max_col colonne del foglio) e ritorna il valore della prima cella non
+    vuota trovata a destra (stessa riga, offset_cols colonne dopo). Usato
+    per leggere il blocco "dichiarazione fornitore" del foglio Production
+    (Type, Total item Qty, Production Estimation, QCP No, ecc.) senza
+    dipendere da coordinate fisse: se in futuro qualcuno sposta o inserisce
+    righe sopra, la ricerca per etichetta continua a trovare il valore.
+    Ritorna None se l'etichetta non viene trovata nel foglio."""
+    target = _norm_label(etichetta)
+    for r in range(1, max_row + 1):
+        for c in range(1, max_col + 1):
+            val = ws.cell(row=r, column=c).value
+            if val is None or not isinstance(val, str):
+                continue
+            if _norm_label(val) == target:
+                for dc in offset_cols:
+                    v2 = ws.cell(row=r, column=c + dc).value
+                    if v2 not in (None, ""):
+                        return v2
+    return None
+
+
+def trova_valore_con_prefisso(ws, prefisso, max_row=30, max_col=30):
+    """Cerca la prima cella di testo che inizia con 'prefisso' (es. "OD:")
+    e ne ritorna il contenuto completo. Usato per campi dove etichetta e
+    valore sono nella stessa cella (es. "OD: 609.6 mm x WT: 32.20 mm")."""
+    pref = _norm_label(prefisso)
+    for r in range(1, max_row + 1):
+        for c in range(1, max_col + 1):
+            val = ws.cell(row=r, column=c).value
+            if isinstance(val, str) and _norm_label(val).startswith(pref):
+                return val.strip()
+    return None
+
+
+def leggi_tabella(ws, nome_tabella):
+    """Ritorna (riga_intestazione, riga_dati_fine, {intestazione_norm: colonna})
+    per una Excel Table (Tabela1/Tabela3 nel foglio Production), leggendo il
+    suo 'ref' (range) invece di un range di riga scritto a mano nello script:
+    cosi' la lettura resta corretta anche se la tabella si sposta o cambia
+    lunghezza (a differenza di un range fisso tipo "riga 16..fine", che si
+    e' gia' rotto quando nel file 07.25 sono state cancellate le righe sopra
+    la tabella)."""
+    tbl = ws.tables.get(nome_tabella)
+    if tbl is None:
+        return None
+    min_col, min_row, max_col, max_row = range_boundaries(tbl.ref)
+    headers = {}
+    for c in range(min_col, max_col + 1):
+        h = ws.cell(row=min_row, column=c).value
+        if h:
+            headers[_norm_label(h)] = c
+    return min_row, max_row, headers
+
+
+def somma_colonna_tabella(ws, nome_tabella, nome_colonna):
+    """Somma una colonna di una Excel Table cercandola per nome header
+    (vedi leggi_tabella): sostituisce somma_colonna() con range di riga
+    fisso per i totali VDI/Final del foglio Production."""
+    info = leggi_tabella(ws, nome_tabella)
+    if not info:
+        return 0
+    min_row, max_row, headers = info
+    c = headers.get(_norm_label(nome_colonna))
+    if not c:
+        return 0
+    return somma_colonna(ws, c, min_row + 1, max_row)
 
 
 # ----------------------------------------------------------------------
@@ -201,30 +294,85 @@ def estrai_kpi(path):
         raise ValueError("Fogli mancanti nel file: %s" % ", ".join(mancanti))
 
     wsProd = wb[SH_PROD]
-    tot_pipes_to_finish = num(wsProd["E3"].value)
-    tot_item_qty = num(wsProd["B4"].value)
-    work_days_to_finish = num(wsProd["E4"].value)
-    production_estimation = wsProd["I3"].value
-    qcp_no = str(wsProd["D13"].value or "").strip()
-    od_wt = str(wsProd["F13"].value or "").strip()
+
+    # --- Totali VDI / Final: letti dalle Excel Table Tabela1/Tabela3 per
+    # nome colonna (non per range di riga fisso). Tabela1/Tabela3 si
+    # espandono automaticamente con i dati, quindi restano corrette anche
+    # se il blocco di intestazione sopra viene spostato o cancellato (e'
+    # il bug che ha causato il conteggio sbagliato nel file 07.25: il
+    # vecchio range fisso "riga 16..fine" partiva 12 righe troppo tardi
+    # rispetto ai dati veri, perdendo ~700 tubi dal totale).
+    coated_vdi = somma_colonna_tabella(wsProd, "Tabela1", "Coated")
+    na_vdi = somma_colonna_tabella(wsProd, "Tabela1", "Not approved / Onhold")
+    repair_vdi = somma_colonna_tabella(wsProd, "Tabela1", "Repair")
+    app_vdi = somma_colonna_tabella(wsProd, "Tabela1", "Approved")
+    coated_fin = somma_colonna_tabella(wsProd, "Tabela3", "Coated")
+    na_fin = somma_colonna_tabella(wsProd, "Tabela3", "Not approved / Onhold")
+    repair_fin = somma_colonna_tabella(wsProd, "Tabela3", "Repair")
+    app_fin = somma_colonna_tabella(wsProd, "Tabela3", "Approved")
+    coated_totale = coated_vdi + coated_fin
+
+    # --- Blocco "dichiarazione fornitore" (Type, Total item Qty, Production
+    # Estimation, QCP No, OD/WT): cercato per etichetta invece che per cella
+    # fissa (E3/B4/E4/I3/D13/F13), con fallback ai valori dell'ultima
+    # settimana buona se l'etichetta non si trova piu' nel foglio (successo
+    # nel file 07.25: l'intero blocco e' stato cancellato per errore).
+    tot_pipes_to_finish = trova_etichetta_valore(wsProd, "Total pipes to finish")
+    tot_item_qty = trova_etichetta_valore(wsProd, "Total  item Qty") or trova_etichetta_valore(wsProd, "Total item Qty")
+    work_days_to_finish = trova_etichetta_valore(wsProd, "Work days to Finish")
+    production_estimation = trova_etichetta_valore(wsProd, "Production Estimation:")
+    qcp_no = trova_etichetta_valore(wsProd, "QCP No:")
+    od_wt = trova_valore_con_prefisso(wsProd, "OD:")
+
+    tot_item_qty = num(tot_item_qty, default=None)
+    fallback_usati = []
+    if not tot_item_qty:
+        tot_item_qty = FALLBACK_TOTAL_ITEM_QTY
+        fallback_usati.append("Total Item Qty")
+    if not qcp_no:
+        qcp_no = FALLBACK_QCP_NO
+        fallback_usati.append("QCP No")
+    if not od_wt:
+        od_wt = FALLBACK_OD_WT
+        fallback_usati.append("OD/WT")
+    qcp_no = str(qcp_no or "").strip()
+    od_wt = str(od_wt or "").strip()
+
     # "Pipes to Finish" e "Total item Qty" sono due totali dichiarati fianco a
-    # fianco nello stesso foglio (Production!E3/B4, stessa riga di intestazione
-    # del vendor): completato = item qty totale - pipe ancora da finire.
+    # fianco nello stesso foglio (Production, riga del vendor): completato =
+    # item qty totale - pipe ancora da finire. Se l'etichetta "Total pipes to
+    # finish" non si trova, la ricaviamo da coated_totale (dato affidabile,
+    # letto dalla Tabella sopra) invece di mostrare 0.
+    tot_pipes_to_finish = num(tot_pipes_to_finish, default=None)
+    if tot_pipes_to_finish is None:
+        tot_pipes_to_finish = max(tot_item_qty - coated_totale, 0)
+        fallback_usati.append("Pipes to Finish (ricalcolato da Total Coated)")
     completed_qty = max(tot_item_qty - tot_pipes_to_finish, 0)
     pct_complete = (completed_qty / tot_item_qty) if tot_item_qty > 0 else 0
 
-    r1_ini, r1_fin = 16, ultima_riga(wsProd, 2, 16)     # blocco VDI (col B = Date)
-    r2_ini, r2_fin = 16, ultima_riga(wsProd, 14, 16)    # blocco Finale (col N = Date)
+    # Giorni lavorativi residui / data stimata di completamento: se
+    # l'etichetta non si trova, li ricalcoliamo dalla velocita' media di
+    # produzione (Approved VDI / numero di turni registrati in Tabela1),
+    # stessa logica della formula originale del foglio (media giornaliera
+    # Approved, poi pipe da finire / media).
+    work_days_to_finish = num(work_days_to_finish, default=None)
+    production_estimation_calcolata = not isinstance(production_estimation, datetime)
+    if work_days_to_finish is None or production_estimation_calcolata:
+        info_tabela1 = leggi_tabella(wsProd, "Tabela1")
+        n_turni = (info_tabela1[1] - info_tabela1[0]) if info_tabela1 else 0
+        media_giornaliera = (app_vdi / n_turni) if n_turni > 0 else 0
+        if work_days_to_finish is None:
+            work_days_to_finish = (tot_pipes_to_finish / media_giornaliera) if media_giornaliera > 0 else 0
+            fallback_usati.append("Work days to Finish (ricalcolato)")
+        if production_estimation_calcolata:
+            from datetime import timedelta
+            production_estimation = datetime.now() + timedelta(days=work_days_to_finish)
+            fallback_usati.append("Production Estimation (ricalcolata)")
 
-    coated_vdi = somma_colonna(wsProd, 4, r1_ini, r1_fin)     # D
-    na_vdi = somma_colonna(wsProd, 5, r1_ini, r1_fin)         # E
-    repair_vdi = somma_colonna(wsProd, 6, r1_ini, r1_fin)     # F
-    app_vdi = somma_colonna(wsProd, 7, r1_ini, r1_fin)        # G
-    coated_fin = somma_colonna(wsProd, 16, r2_ini, r2_fin)    # P
-    na_fin = somma_colonna(wsProd, 17, r2_ini, r2_fin)        # Q
-    repair_fin = somma_colonna(wsProd, 18, r2_ini, r2_fin)    # R
-    app_fin = somma_colonna(wsProd, 19, r2_ini, r2_fin)       # S
-    coated_totale = coated_vdi + coated_fin
+    if fallback_usati:
+        log("ATTENZIONE: blocco dichiarazione fornitore incompleto nel foglio "
+            "'Production' - uso valori di riserva/ricalcolati per: %s. "
+            "Controllare il file sorgente." % ", ".join(fallback_usati))
 
     wsOH = wb[SH_ONHOLD]
     last_oh = ultima_riga(wsOH, 6, 5)
