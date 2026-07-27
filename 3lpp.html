@@ -56,7 +56,7 @@ main{padding:32px 52px;max-width:1200px;margin:0 auto;}
 @media (prefers-reduced-motion: no-preference) {
   .ring-fill{animation:ringFill 1.4s cubic-bezier(.4,0,.2,1) forwards;}
 }
-@keyframes ringFill{from{stroke-dashoffset:238.76px;}to{stroke-dashoffset:214.99px;}}
+@keyframes ringFill{from{stroke-dashoffset:238.76px;}to{stroke-dashoffset:238.76px;}}
 .card{background:var(--s1);border:1px solid var(--border);border-radius:var(--r);padding:24px;margin-bottom:14px;}
 ul.bullets{list-style:none;display:flex;flex-direction:column;gap:10px;}
 ul.bullets li{font-size:13px;line-height:1.5;padding-left:16px;position:relative;color:var(--text);}
@@ -190,11 +190,11 @@ body.light .stackbar{background:rgba(0,0,0,.05);}
   <div>
     <div class="brand-title">Sakarya Gas Field Development - 3LPP Inspection</div>
     <div class="brand-sub">Weekly Summary - Coating Plant #6 - Tenaris Confab</div>
-    <div class="proj-info">QCP No: 50217 - 3LPP – PPT Pro &nbsp;&middot;&nbsp; OD: 609.6 mm x WT: 32.20 mm</div>
+    <div class="proj-info">QCP No: 44 &nbsp;&middot;&nbsp; n/a</div>
   </div>
   <div style="display:flex;align-items:center;gap:20px;">
     <a class="back no-print" href="index.html">&larr; Overall Status Dashboard</a>
-    <div class="hdr-date">Report Date &nbsp;<b>18/07/2026</b></div>
+    <div class="hdr-date">Report Date &nbsp;<b>25/07/2026</b></div>
     <button class="print-btn no-print" onclick="window.print()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>Print Report</button>
   </div>
 </header>
@@ -208,24 +208,24 @@ body.light .stackbar{background:rgba(0,0,0,.05);}
           <stop offset="0%" stop-color="var(--blue)"/><stop offset="100%" stop-color="var(--teal)"/>
         </linearGradient></defs>
         <circle class="ring-bg" cx="45" cy="45" r="38"></circle>
-        <circle class="ring-fill" cx="45" cy="45" r="38" style="stroke-dashoffset:214.99px;"></circle>
+        <circle class="ring-fill" cx="45" cy="45" r="38" style="stroke-dashoffset:238.76px;"></circle>
       </svg>
-      <div class="ring-pct">10.0%</div>
+      <div class="ring-pct">0.0%</div>
     </div>
     <div class="kpi-hero-text">
       <div class="kpi-label">Est. Completion</div>
-      <div class="kpi-hero-date">18/06/2027</div>
-      <div class="kpi-sub">335 work days remaining</div>
+      <div class="kpi-hero-date">Type</div>
+      <div class="kpi-sub">0 work days remaining</div>
     </div>
-    <div class="kpi-hero-bar"><div class="stackbar"><div class="seg" style="width:9.956%;background:var(--teal);border-radius:4px 0 0 4px;" data-tip="Completed: 1,593 (10.0%)"></div><div class="seg" style="width:90.044%;background:var(--blue);border-radius:0 4px 4px 0;" data-tip="Remaining: 14,407 (90.0%)"></div></div><div class="legend"><div class="legend-item"><span class="dot" style="background:var(--teal);"></span>Completed <b>1,593</b><span class="lg-pct">10.0%</span></div><div class="legend-item"><span class="dot" style="background:var(--blue);"></span>Remaining <b>14,407</b><span class="lg-pct">90.0%</span></div></div></div>
+    <div class="kpi-hero-bar"><div class="stackbar"><div class="seg" style="width:0.000%;background:var(--teal);border-radius:4px 0 0 4px;" data-tip="Completed: 0 (0.0%)"></div><div class="seg" style="width:0.000%;background:var(--blue);border-radius:0 4px 4px 0;" data-tip="Remaining: 0 (0.0%)"></div></div><div class="legend"><div class="legend-item"><span class="dot" style="background:var(--teal);"></span>Completed <b>0</b><span class="lg-pct">0.0%</span></div><div class="legend-item"><span class="dot" style="background:var(--blue);"></span>Remaining <b>0</b><span class="lg-pct">0.0%</span></div></div></div>
   </div>
   <div class="kpi-grid">
-    <div class="kpi"><div class="kpi-label">Pipes to Finish</div><div class="kpi-val">14,407</div><div class="kpi-sub">of 16,000 total item qty &middot; 335 work days</div><div class="kpi-bar" style="background:linear-gradient(90deg,var(--blue),var(--teal));"></div></div>
-    <div class="kpi"><div class="kpi-label">Total Coated (VDI+Final)</div><div class="kpi-val">2,973</div><div class="kpi-sub">VDI: 1,636 | Final: 1,337</div><div class="kpi-bar" style="background:linear-gradient(90deg,var(--blue),var(--teal));"></div></div>
-    <div class="kpi"><div class="kpi-label">Approved - Final Inspection</div><div class="kpi-val">1,305</div><div class="kpi-sub">97.6% of final coated</div><div class="kpi-bar" style="background:linear-gradient(90deg,var(--blue),var(--teal));"></div></div>
-    <div class="kpi"><div class="kpi-label">Not Approved / Quarantine</div><div class="kpi-val" style="background:none;-webkit-text-fill-color:#00e676;color:#00e676;">89</div><div class="kpi-sub">3.0% of total coated</div><div class="kpi-bar" style="background:#00e676;"></div></div>
-    <div class="kpi"><div class="kpi-label">Lab Tests Failed (PPT+Prod)</div><div class="kpi-val" style="background:none;-webkit-text-fill-color:#ffca28;color:#ffca28;">3</div><div class="kpi-sub">3.1% of 98 tests performed</div><div class="kpi-bar" style="background:#ffca28;"></div></div>
-    <div class="kpi"><div class="kpi-label">Stripping Control Open</div><div class="kpi-val">80</div><div class="kpi-sub">non-conformances recorded</div><div class="kpi-bar" style="background:linear-gradient(90deg,var(--blue),var(--teal));"></div></div>
+    <div class="kpi"><div class="kpi-label">Pipes to Finish</div><div class="kpi-val">0</div><div class="kpi-sub">of 0 total item qty &middot; 0 work days</div><div class="kpi-bar" style="background:linear-gradient(90deg,var(--blue),var(--teal));"></div></div>
+    <div class="kpi"><div class="kpi-label">Total Coated (VDI+Final)</div><div class="kpi-val">3,760</div><div class="kpi-sub">VDI: 1,936 | Final: 1,824</div><div class="kpi-bar" style="background:linear-gradient(90deg,var(--blue),var(--teal));"></div></div>
+    <div class="kpi"><div class="kpi-label">Approved - Final Inspection</div><div class="kpi-val">1,791</div><div class="kpi-sub">98.2% of final coated</div><div class="kpi-bar" style="background:linear-gradient(90deg,var(--blue),var(--teal));"></div></div>
+    <div class="kpi"><div class="kpi-label">Not Approved / Quarantine</div><div class="kpi-val" style="background:none;-webkit-text-fill-color:#ffca28;color:#ffca28;">129</div><div class="kpi-sub">3.4% of total coated</div><div class="kpi-bar" style="background:#ffca28;"></div></div>
+    <div class="kpi"><div class="kpi-label">Lab Tests Failed (PPT+Prod)</div><div class="kpi-val" style="background:none;-webkit-text-fill-color:#ffca28;color:#ffca28;">3</div><div class="kpi-sub">2.0% of 147 tests performed</div><div class="kpi-bar" style="background:#ffca28;"></div></div>
+    <div class="kpi"><div class="kpi-label">Stripping Control Open</div><div class="kpi-val">135</div><div class="kpi-sub">non-conformances recorded</div><div class="kpi-bar" style="background:linear-gradient(90deg,var(--blue),var(--teal));"></div></div>
   </div>
 
   <div class="sl">3LPP Raw Material</div>
@@ -234,48 +234,48 @@ body.light .stackbar{background:rgba(0,0,0,.05);}
       <thead><tr><th></th><th>Manufacturer</th><th>Trade Name</th><th>Batch</th></tr></thead>
       <tbody><tr><td>Epoxy Powder</td><td>Sherwin-Williams</td><td>Pipeclad 2000</td><td>XB26030139<span class="rm-badge">BATCH CHANGED THIS PERIOD</span></td></tr>
 <tr><td>Adhesive</td><td>Borealis</td><td>Borcoat BB127E</td><td>225876</td></tr>
-<tr><td>Powder Adhesive</td><td>Borealis</td><td>Borcoat BB127 E - PW</td><td>S225720015</td></tr>
-<tr><td>PP Top Coat</td><td>Borealis</td><td>Borcoat BB108E-1199</td><td>63250612</td></tr>
+<tr><td>Powder Adhesive</td><td>Borealis</td><td>Borcoat BB127 E - PW</td><td>S225841014<span class="rm-badge">BATCH CHANGED THIS PERIOD</span></td></tr>
+<tr><td>PP Top Coat</td><td>Borealis</td><td>Borcoat BB108E-1199</td><td>63260124<span class="rm-badge">BATCH CHANGED THIS PERIOD</span></td></tr>
 <tr><td>Rough Coat</td><td>Borealis</td><td>Borcoat BB127E-PW</td><td>S240648001<span class="rm-badge">BATCH CHANGED THIS PERIOD</span></td></tr></tbody>
     </table>
-    <div class="chart-note">Materials in use as of last logged shift (18/07/2026). Source: "Raw Material" sheet, columns C-Q.</div>
+    <div class="chart-note">Materials in use as of last logged shift (27/07/2026). Source: "Raw Material" sheet, columns C-Q.</div>
   </div>
 
   <div class="sl">Analysis &amp; Observations</div>
-  <div class="card"><ul class="bullets"><li>Production: 2,973 pipes coated (VDI+Final) out of 16,000 total order item qty; 14,407 pipes still to finish (335 work days).</li>
-<li>Repair: 3 pipes reworked at VDI, 8 at Final Inspection (11 combined).</li>
-<li>Anti Corrosive Plant: 89 pipes not approved / quarantined (3.0% of total coated).</li>
-<li>Laboratory: 98 tests performed (PPT 9 / Prod 89), 3 failed (3.1%), 1 in progress.</li>
-<li>Stripping Control: 80 non-conformances recorded.</li></ul></div>
+  <div class="card"><ul class="bullets"><li>Production: 3,760 pipes coated (VDI+Final) out of 0 total order item qty; 0 pipes still to finish (0 work days).</li>
+<li>Repair: 2 pipes reworked at VDI, 3 at Final Inspection (5 combined).</li>
+<li>Anti Corrosive Plant: 129 pipes not approved / quarantined (3.4% of total coated).</li>
+<li>Laboratory: 147 tests performed (PPT 9 / Prod 138), 3 failed (2.0%), 1 in progress.</li>
+<li>Stripping Control: 135 non-conformances recorded.</li></ul></div>
 
   <div class="sl">Charts</div>
   <div class="chart-grid">
     <div class="chart-card">
       <div class="chart-title">Total Coated by Station</div>
-      <div class="stackbar"><div class="seg" style="width:55.029%;background:var(--blue);border-radius:4px 0 0 4px;" data-tip="VDI Station: 1,636 (55.0%)"></div><div class="seg" style="width:44.971%;background:var(--teal);border-radius:0 4px 4px 0;" data-tip="Final Station: 1,337 (45.0%)"></div></div><div class="legend"><div class="legend-item"><span class="dot" style="background:var(--blue);"></span>VDI Station <b>1,636</b><span class="lg-pct">55.0%</span></div><div class="legend-item"><span class="dot" style="background:var(--teal);"></span>Final Station <b>1,337</b><span class="lg-pct">45.0%</span></div></div>
+      <div class="stackbar"><div class="seg" style="width:51.489%;background:var(--blue);border-radius:4px 0 0 4px;" data-tip="VDI Station: 1,936 (51.5%)"></div><div class="seg" style="width:48.511%;background:var(--teal);border-radius:0 4px 4px 0;" data-tip="Final Station: 1,824 (48.5%)"></div></div><div class="legend"><div class="legend-item"><span class="dot" style="background:var(--blue);"></span>VDI Station <b>1,936</b><span class="lg-pct">51.5%</span></div><div class="legend-item"><span class="dot" style="background:var(--teal);"></span>Final Station <b>1,824</b><span class="lg-pct">48.5%</span></div></div>
     </div>
     <div class="chart-card">
       <div class="chart-title">Not Approved / Quarantine by Disposition</div>
-      <div class="stackbar"><div class="seg" style="width:41.573%;background:var(--blue);border-radius:4px 0 0 4px;" data-tip="Not Approved: 37 (41.6%)"></div><div class="seg" style="width:33.708%;background:var(--teal);" data-tip="On Hold: 30 (33.7%)"></div><div class="seg" style="width:24.719%;background:var(--purple);border-radius:0 4px 4px 0;" data-tip="Repair: 22 (24.7%)"></div></div><div class="legend"><div class="legend-item"><span class="dot" style="background:var(--blue);"></span>Not Approved <b>37</b><span class="lg-pct">41.6%</span></div><div class="legend-item"><span class="dot" style="background:var(--teal);"></span>On Hold <b>30</b><span class="lg-pct">33.7%</span></div><div class="legend-item"><span class="dot" style="background:var(--purple);"></span>Repair <b>22</b><span class="lg-pct">24.7%</span></div></div>
+      <div class="stackbar"><div class="seg" style="width:45.736%;background:var(--blue);border-radius:4px 0 0 4px;" data-tip="Not Approved: 59 (45.7%)"></div><div class="seg" style="width:30.233%;background:var(--teal);" data-tip="On Hold: 39 (30.2%)"></div><div class="seg" style="width:24.031%;background:var(--purple);border-radius:0 4px 4px 0;" data-tip="Repair: 31 (24.0%)"></div></div><div class="legend"><div class="legend-item"><span class="dot" style="background:var(--blue);"></span>Not Approved <b>59</b><span class="lg-pct">45.7%</span></div><div class="legend-item"><span class="dot" style="background:var(--teal);"></span>On Hold <b>39</b><span class="lg-pct">30.2%</span></div><div class="legend-item"><span class="dot" style="background:var(--purple);"></span>Repair <b>31</b><span class="lg-pct">24.0%</span></div></div>
     </div>
     <div class="chart-card">
       <div class="chart-title">On Hold</div>
-      <div class="stat-row"><div class="stat-item"><div class="stat-label">Pending</div><div class="stat-val">0</div></div><div class="stat-item"><div class="stat-label">On Hold</div><div class="stat-val">30</div></div><div class="stat-item"><div class="stat-label">Repair</div><div class="stat-val">22</div></div><div class="stat-item"><div class="stat-label">Not Approved</div><div class="stat-val">0</div></div></div>
+      <div class="stat-row"><div class="stat-item"><div class="stat-label">Pending</div><div class="stat-val">0</div></div><div class="stat-item"><div class="stat-label">On Hold</div><div class="stat-val">39</div></div><div class="stat-item"><div class="stat-label">Repair</div><div class="stat-val">31</div></div><div class="stat-item"><div class="stat-label">Not Approved</div><div class="stat-val">0</div></div></div>
     </div>
     <div class="chart-card">
       <div class="chart-title">After Action Outcome</div>
-      <div class="stackbar"><div class="seg" style="width:17.978%;background:#00e676;border-radius:4px 0 0 4px;" data-tip="Approved: 16 (18.0%)"></div><div class="seg" style="width:43.820%;background:#ff4757;" data-tip="Not Approved: 39 (43.8%)"></div><div class="seg" style="width:38.202%;background:#ffca28;border-radius:0 4px 4px 0;" data-tip="Pending Action: 34 (38.2%)"></div></div><div class="legend"><div class="legend-item"><span class="dot" style="background:#00e676;"></span>Approved <b>16</b><span class="lg-pct">18.0%</span></div><div class="legend-item"><span class="dot" style="background:#ff4757;"></span>Not Approved <b>39</b><span class="lg-pct">43.8%</span></div><div class="legend-item"><span class="dot" style="background:#ffca28;"></span>Pending Action <b>34</b><span class="lg-pct">38.2%</span></div></div>
+      <div class="stackbar"><div class="seg" style="width:16.279%;background:#00e676;border-radius:4px 0 0 4px;" data-tip="Approved: 21 (16.3%)"></div><div class="seg" style="width:37.984%;background:#ff4757;" data-tip="Not Approved: 49 (38.0%)"></div><div class="seg" style="width:45.736%;background:#ffca28;border-radius:0 4px 4px 0;" data-tip="Pending Action: 59 (45.7%)"></div></div><div class="legend"><div class="legend-item"><span class="dot" style="background:#00e676;"></span>Approved <b>21</b><span class="lg-pct">16.3%</span></div><div class="legend-item"><span class="dot" style="background:#ff4757;"></span>Not Approved <b>49</b><span class="lg-pct">38.0%</span></div><div class="legend-item"><span class="dot" style="background:#ffca28;"></span>Pending Action <b>59</b><span class="lg-pct">45.7%</span></div></div>
     </div>
     <div class="chart-card wide">
       <div class="chart-title">Production Throughput by Station</div>
-      <div class="lab-row"><div class="lab-row-lbl">VDI Station <span class="lab-row-n">(1,636 coated)</span></div><div class="stackbar"><div class="seg" style="width:97.372%;background:#00e676;" data-tip="Approved: 1,593"></div><div class="seg" style="width:0.183%;background:#ffca28;" data-tip="Repair: 3"></div><div class="seg" style="width:2.445%;background:#ff4757;" data-tip="Not Approved: 40"></div></div></div>
-<div class="lab-row"><div class="lab-row-lbl">Final Station <span class="lab-row-n">(1,337 coated)</span></div><div class="stackbar"><div class="seg" style="width:97.607%;background:#00e676;" data-tip="Approved: 1,305"></div><div class="seg" style="width:0.598%;background:#ffca28;" data-tip="Repair: 8"></div><div class="seg" style="width:1.795%;background:#ff4757;" data-tip="Not Approved: 24"></div></div></div>
+      <div class="lab-row"><div class="lab-row-lbl">VDI Station <span class="lab-row-n">(1,936 coated)</span></div><div class="stackbar"><div class="seg" style="width:97.107%;background:#00e676;" data-tip="Approved: 1,880"></div><div class="seg" style="width:0.103%;background:#ffca28;" data-tip="Repair: 2"></div><div class="seg" style="width:2.789%;background:#ff4757;" data-tip="Not Approved: 54"></div></div></div>
+<div class="lab-row"><div class="lab-row-lbl">Final Station <span class="lab-row-n">(1,824 coated)</span></div><div class="stackbar"><div class="seg" style="width:98.191%;background:#00e676;" data-tip="Approved: 1,791"></div><div class="seg" style="width:0.164%;background:#ffca28;" data-tip="Repair: 3"></div><div class="seg" style="width:1.645%;background:#ff4757;" data-tip="Not Approved: 30"></div></div></div>
       <div class="legend"><div class="legend-item"><span class="dot" style="background:#00e676;"></span>Approved</div><div class="legend-item"><span class="dot" style="background:#ffca28;"></span>Repair</div><div class="legend-item"><span class="dot" style="background:#ff4757;"></span>Not Approved</div></div>
     </div>
     <div class="chart-card wide">
       <div class="chart-title">Lab Test Results by Type</div>
       <div class="lab-row"><div class="lab-row-lbl">PPT <span class="lab-row-n">(9 tests)</span></div><div class="stackbar"><div class="seg" style="width:100.000%;background:#00e676;" data-tip="Pass: 9"></div></div></div>
-<div class="lab-row"><div class="lab-row-lbl">Prod <span class="lab-row-n">(89 tests)</span></div><div class="stackbar"><div class="seg" style="width:95.506%;background:#00e676;" data-tip="Pass: 85"></div><div class="seg" style="width:3.371%;background:#ff4757;" data-tip="Fail: 3"></div><div class="seg" style="width:1.124%;background:#ffca28;" data-tip="In Progress: 1"></div></div></div>
+<div class="lab-row"><div class="lab-row-lbl">Prod <span class="lab-row-n">(138 tests)</span></div><div class="stackbar"><div class="seg" style="width:97.101%;background:#00e676;" data-tip="Pass: 134"></div><div class="seg" style="width:2.174%;background:#ff4757;" data-tip="Fail: 3"></div><div class="seg" style="width:0.725%;background:#ffca28;" data-tip="In Progress: 1"></div></div></div>
       <div class="legend"><div class="legend-item"><span class="dot" style="background:#00e676;"></span>Pass</div><div class="legend-item"><span class="dot" style="background:#ff4757;"></span>Fail</div><div class="legend-item"><span class="dot" style="background:#ffca28;"></span>In Progress</div></div>
     </div>
   </div>
@@ -292,7 +292,7 @@ body.light .stackbar{background:rgba(0,0,0,.05);}
     <div class="ft-col"><div class="ft-col-lbl">Registered Office</div><span>Via Trieste 16/A</span><span>20097 S. Donato Mil.se (MI)</span></div>
     <div class="ft-col"><div class="ft-col-lbl">Head Quarter</div><span>Via Europa 42</span><span>20097 S. Donato Mil.se (MI)</span></div>
   </div>
-  <div class="ft-stamp">IQS Confidential &middot; Report 18/07/2026</div>
+  <div class="ft-stamp">IQS Confidential &middot; Report 25/07/2026</div>
 </footer>
 <script>
 // Cursor-following glow on cards (same effect as the main dashboard)

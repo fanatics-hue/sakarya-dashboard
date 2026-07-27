@@ -78,7 +78,7 @@ Date,Shift,Pipe N°,Defect,Position,Extension,Remarks
 02/07/2026,3,26.4.9913,Underfill,3900,150,
 03/07/2026,1,26.4.10032,slag Inclusion,4740,150,
 03/07/2026,3,26.4.9524,Lack of penetration,10670,150,
-04/07/2026,1,26.4.9730,Stop/Start,3300,300,
+04/07/2026,1,26.4.9730,Stop/Start - Slag Inclusion,3300,300,2 Repairs
 04/07/2026,1,26.4.9576,Stop/Start,8220,200,
 04/07/2026,1,26.4.9631,Stop/Start,5000,300,
 04/07/2026,1,26.4.9284,Stop/Start - Slag Inclusion,6180,200,2 Repairs
@@ -91,7 +91,7 @@ Date,Shift,Pipe N°,Defect,Position,Extension,Remarks
 07/07/2026,3,26.4.10420,Stop/Start,8900,100,
 07/07/2026,3,26.4.10371,Underfill,11240,150,
 08/07/2026,1,26.4.10269,Stop/Start,8850,200,
-08/07/2026,1,26.4.10241,Stop/Start,2450,150,
+08/07/2026,1,26.4.10241,Stop/Start - Slag Inclusion,2450,150,2 Repairs
 08/07/2026,1,26.4.10208,Stop/Start,6200,150,
 08/07/2026,1,26.4.9622,Stop/Start - Slag Inclusion,10850,170,
 08/07/2026,2,26.4.10405,Stop/Start,2400,120,
@@ -143,3 +143,15 @@ Date,Shift,Pipe N°,Defect,Position,Extension,Remarks
 17/07/2026,3,26.4.11470,Stop/Start,7600,150,
 17/07/2026,3,26.4.11546,Stop/Start,1600,200,
 17/07/2026,3,26.4.11441,Undercut,12270,5,
+18/07/2026,1,26.4.11516,Slag Inclusion,7350,150,
+18/07/2026,2,26.4.11497,Underfill,10570,300,
+20/07/2026,1,26.4.11596,Underfill,10000,150,
+20/07/2026,2,26.4.11500,Stop/Start,2900,200,
+21/07/2026,1,26.4.11755,Stop/Start,880,200,
+21/07/2026,1,26.4.11725,Stop/Start,11510,200,
+21/07/2026,1,26.4.11761,Stop/Start,10850,200,
+21/07/2026,1,26.4.11760,Stop/Start,4700,200,
+21/07/2026,1,26.4.10805,Stop/Start,2500,200,
+21/07/2026,2,26.4.11160,Stop/Start,6800,200,
+21/07/2026,2,26.4.11167,Stop/Start,11500,150,
+22/07/2026,1,26.4.11885,Underfill,3100,150,
